@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD UNIVERSAL V16.3</title>
+    <title>R&C GOLD UNIVERSAL V16.4</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA GOLD V16.3 (Final Fix) --- */
+        /* --- TEMA GOLD V16.4 (NetRange Fix) --- */
         :root { 
             --bg: #050505; 
             --gold: #FFD700; 
@@ -80,20 +80,17 @@
         .item { padding: 14px 20px; border-bottom: 1px solid #1a1a1a; color: #bbb; white-space: nowrap; overflow: hidden; font-size: 14px; position: relative; }
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; font-size: 12px; }
         
-        /* PLAYER & LAYOUT CORRIGIDO */
+        /* PLAYER CONTAINER */
         .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; }
         
-        /* O "contain" garante que não vai cortar a imagem, vai colocar barras pretas se necessário */
+        /* O "contain" visual só funciona se o browser respeitar. Se não, JS corrige. */
         .vid-box { 
             width: 100%; 
             height: 45vh; 
             background: #000; 
             position: relative; 
             border-bottom: 2px solid #333; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
+            overflow: hidden; /* Corta o excesso se o vídeo estourar */
         }
         
         .vid-box.fs { 
@@ -103,12 +100,13 @@
             border: none !important; 
         }
 
-        /* Vídeo Forçado a respeitar proporção */
+        /* Vídeo Absoluto para controle manual */
         video { 
-            width: 100% !important; 
-            height: 100% !important; 
-            object-fit: contain !important; 
+            position: absolute; /* Controle total da posição */
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
             background: #000; 
+            transform: translateZ(0); /* Aceleração Hardware */
         }
 
         /* OSD & INFO */
@@ -199,6 +197,44 @@
     </div>
 
     <script>
+        // --- FUNÇÃO DE CORREÇÃO MANUAL DE PROPORÇÃO (NETRANGE FIX) ---
+        function fixAspectRatio() {
+            var v = document.getElementById('player');
+            var box = document.getElementById('vid-box');
+            if(!v || !box) return;
+            
+            // Dimensões do Container
+            var bw = box.offsetWidth;
+            var bh = box.offsetHeight;
+            
+            // Dimensões do Vídeo (se não tiver loadedmetadata, usa padrão 16:9)
+            var vw = v.videoWidth || 1920;
+            var vh = v.videoHeight || 1080;
+            
+            if(vw === 0 || vh === 0) return; // Evita divisão por zero
+
+            var videoRatio = vw / vh;
+            var boxRatio = bw / bh;
+
+            var newW, newH;
+
+            // Se o vídeo for mais "largo" que a caixa (Letterbox Horizontal)
+            if (videoRatio > boxRatio) {
+                newW = bw;
+                newH = bw / videoRatio;
+            } else {
+                // Se o vídeo for mais "alto" ou igual (Pillarbox Vertical)
+                newH = bh;
+                newW = bh * videoRatio;
+            }
+
+            // Centraliza Manualmente
+            v.style.width = newW + 'px';
+            v.style.height = newH + 'px';
+            v.style.left = ((bw - newW) / 2) + 'px';
+            v.style.top = ((bh - newH) / 2) + 'px';
+        }
+
         var FavManager = {
             key: 'rc_favs',
             list: [],
@@ -219,7 +255,13 @@
         var PlayerEngine = {
             hls: null, video: null, url: null, retryCount: 0, monitorInterval: null, lastTime: 0,
             
-            init: function() { this.video = document.getElementById('player'); },
+            init: function() { 
+                this.video = document.getElementById('player'); 
+                // Monitora carregamento de metadados para ajustar tamanho
+                this.video.addEventListener('loadedmetadata', fixAspectRatio);
+                this.video.addEventListener('resize', fixAspectRatio);
+                window.addEventListener('resize', fixAspectRatio); // Ao entrar em fullscreen
+            },
 
             play: function(url, isLive) {
                 if(this.url === url && !this.video.paused) return;
@@ -228,18 +270,14 @@
                 this.retryCount = 0;
                 this.url = url;
                 
-                // --- CORREÇÃO DE PROPORÇÃO (FORÇAR REPAINT) ---
-                // Isso força o navegador a aplicar o "contain" assim que o vídeo carrega
-                this.video.style.objectFit = 'contain';
-                setTimeout(() => { 
-                    var v = document.getElementById('player');
-                    v.style.objectFit = 'contain'; 
-                }, 100);
+                // Reseta estilo antes de carregar
+                this.video.style.width = '100%';
+                this.video.style.height = '100%';
 
                 if (!isLive) {
                     this.video.controls = true; 
                     this.video.src = url;
-                    this.video.play().catch(e=>console.log(e));
+                    this.video.play().then(() => { setTimeout(fixAspectRatio, 500); }).catch(e=>console.log(e));
                     this.video.ontimeupdate = function() {
                         if(App.zone===3 || App.mode!=='live') {
                             var p = (this.currentTime / this.duration) * 100;
@@ -265,9 +303,10 @@
                     this.hls.attachMedia(this.video);
                     this.hls.on(Hls.Events.MANIFEST_PARSED, () => { 
                         this.video.play().catch(e=>console.log(e)); 
-                        // REFORÇO DE PROPORÇÃO APÓS LOAD
-                        this.video.style.objectFit = 'contain';
+                        // Chama a correção manual após iniciar
+                        setTimeout(fixAspectRatio, 500);
                     });
+                    this.hls.on(Hls.Events.LEVEL_SWITCHED, () => { setTimeout(fixAspectRatio, 500); });
                     
                     this.hls.on(Hls.Events.ERROR, (event, data) => {
                         if (data.fatal) {
@@ -281,7 +320,7 @@
                     this.startMonitor(isLive);
                 } else {
                     this.video.src = url;
-                    this.video.play().catch(e=>console.log(e));
+                    this.video.play().then(() => { setTimeout(fixAspectRatio, 500); }).catch(e=>console.log(e));
                 }
             },
 
@@ -561,9 +600,12 @@
             toggleFull: function() {
                 var b = document.getElementById('vid-box');
                 if(b.classList.contains('fs')) this.exitFull();
-                else { b.classList.add('fs'); this.osd("TELA CHEIA"); }
+                else { b.classList.add('fs'); this.osd("TELA CHEIA"); setTimeout(fixAspectRatio, 100); }
             },
-            exitFull: function() { document.getElementById('vid-box').classList.remove('fs'); },
+            exitFull: function() { 
+                document.getElementById('vid-box').classList.remove('fs'); 
+                setTimeout(fixAspectRatio, 100); 
+            },
             
             osd: function(m) {
                 var o = document.getElementById('osd'); o.innerText=m; o.style.display='block';
