@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD UNIVERSAL V16.7 TURBO</title>
+    <title>R&C GOLD UNIVERSAL V16.8 SPORTS</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA GOLD V16.7 (OTIMIZADO) --- */
+        /* --- TEMA GOLD V16.8 (OTIMIZADO PARA NETRANGE) --- */
         :root { 
             --bg: #050505; 
             --gold: #FFD700; 
             --text: #ffffff; 
             --panel: #111;
-            /* Gradiente simplificado para performance */
             --focus-bg: #FFD700; 
         }
         
@@ -25,29 +24,27 @@
             background-color: var(--bg); color: var(--text);
             font-family: 'Montserrat', sans-serif;
             width: 100vw; height: 100vh; overflow: hidden;
-            /* Aceleração de hardware global */
-            transform: translateZ(0); 
+            transform: translateZ(0); /* Aceleração 3D */
         }
 
         .hide { display: none !important; }
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; background: #000; }
 
-        /* FOCO OTIMIZADO (Sem Blur/Shadow pesado para não travar TV fraca) */
+        /* FOCO LEVE (Sem sombras pesadas) */
         .focused {
             border: 3px solid #fff !important;
             background: var(--focus-bg) !important;
             color: #000 !important;
-            transform: scale(1.02); /* Escala menor para fluidez */
+            transform: scale(1.02);
             font-weight: 800;
             z-index: 20;
-            /* Removemos box-shadow pesado para ganho de FPS */
         }
         .focused i { color: #000 !important; }
         .playing-item { color: var(--gold) !important; border-left: 3px solid var(--gold); background: #151515; }
 
         /* LOGIN */
-        #login-layer { background: #080808; } /* Gradiente removido para performance */
+        #login-layer { background: #080808; }
         .login-box { width: 450px; padding: 40px; background: #111; border: 1px solid #333; border-radius: 12px; text-align: center; }
         .logo-txt { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-bottom: 20px; }
         .logo-txt span { color: var(--gold); }
@@ -70,23 +67,23 @@
         /* CONTEÚDO */
         #content-layer { display: flex; }
         
-        /* OTIMIZAÇÃO DE RENDERIZAÇÃO DE LISTAS */
+        /* OTIMIZAÇÃO DE MEMÓRIA NAS LISTAS */
         .col-cat { 
             width: 25%; background: #080808; border-right: 1px solid #222; display: flex; flex-direction: column;
-            contain: content; /* Browser ignora render fora da view */
+            contain: content; 
         }
         .cat-head { padding: 15px; background: var(--gold); color: #000; font-weight: 900; text-align: center; }
         .cat-list { flex: 1; overflow-y: auto; will-change: scroll-position; }
         .cat-item { 
             padding: 14px 20px; border-bottom: 1px solid #1a1a1a; color: #888; font-size: 13px; font-weight: 600; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Corta texto longo */
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
             display: block;
         }
         .cat-item.active { border-left: 5px solid var(--gold); background: #1a1a1a; color: #fff; }
 
         .col-list { 
             width: 35%; background: #0e0e0e; border-right: 1px solid #222; display: flex; flex-direction: column; 
-            contain: content; /* Otimização */
+            contain: content;
         }
         .search-area { padding: 10px; background: #000; border-bottom: 1px solid #333; display: flex; gap: 10px; position: relative; align-items: center; }
         .search-icon-btn { position: absolute; left: 20px; z-index: 5; color: #666; cursor: pointer; font-size: 18px; padding: 5px; }
@@ -96,63 +93,42 @@
         .item { 
             padding: 14px 20px; border-bottom: 1px solid #1a1a1a; color: #bbb; 
             font-size: 14px; position: relative; display: block;
-            /* TRUNCAGEM DE TEXTO PERFEITA */
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            max-width: 100%;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
         }
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; font-size: 12px; }
         
-        .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; min-width: 0; /* Impede que flex quebre */ }
+        .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; min-width: 0; }
         
         .vid-box { 
-            width: 100%; 
-            height: 45vh; /* Altura fixa */
-            background: #000; 
-            position: relative; 
-            border-bottom: 2px solid #333; 
-            overflow: hidden; 
-            contain: strict; /* Isola o player do resto do layout */
+            width: 100%; height: 45vh; background: #000; 
+            position: relative; border-bottom: 2px solid #333; 
+            overflow: hidden; contain: strict; 
         }
-        
         .vid-box.fs { 
             position: fixed; top: 0; left: 0; 
             width: 100vw; height: 100vh; 
-            z-index: 9999; 
-            border: none !important; 
+            z-index: 9999; border: none !important; 
         }
 
-        /* REMOVE CONTROLES NATIVOS DO PLAYER VIA CSS (Reforço) */
+        /* REMOVE CONTROLES NATIVOS VIA CSS */
         video::-webkit-media-controls { display:none !important; }
         video::-webkit-media-controls-enclosure { display:none !important; }
 
         video { 
-            width: 100%; height: 100%; 
-            object-fit: contain; 
-            background: #000; 
-            outline: none;
-            position: relative;
+            width: 100%; height: 100%; object-fit: contain; 
+            background: #000; outline: none; position: relative;
         }
-
         video.live-mode {
-            position: absolute; 
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: fill; 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; object-fit: fill; 
         }
 
         .osd-status { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: var(--gold); padding: 10px 20px; border-radius: 5px; font-weight: 800; display: none; border: 1px solid var(--gold); z-index: 10000; }
         
-        .meta { 
-            padding: 30px; flex: 1; background: #050505; display: flex; flex-direction: column; overflow: hidden; 
-            min-height: 0; /* Permite scroll interno */
-        }
+        .meta { padding: 30px; flex: 1; background: #050505; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .meta-title { 
             font-size: 22px; color: var(--gold); font-weight: 800; margin-bottom: 5px; 
-            /* Truncagem Robusta */
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            width: 100%; display: block;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; display: block;
         }
         .meta-epg { font-size: 13px; color: #fff; margin-bottom: 10px; background: #222; padding: 5px 10px; border-radius: 4px; display: inline-block; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .meta-desc { font-size: 14px; color: #666; margin-bottom: auto; overflow-y: auto; max-height: 100px; }
@@ -162,8 +138,6 @@
         .dot { width: 12px; height: 12px; border-radius: 50%; }
 
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--gold); font-weight:900; font-size:24px; }
-        
-        /* Esconde barras de rolagem para visual limpo */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
     </style>
 </head>
@@ -236,7 +210,6 @@
     </div>
 
     <script>
-        // --- FUNÇÃO DE CORREÇÃO MANUAL (SÓ PARA LIVE - NETRANGE) ---
         function fixAspectRatio() {
             if(App.mode !== 'live') return;
             var v = document.getElementById('player');
@@ -279,11 +252,10 @@
                 if(this.url === url && !this.video.paused) return;
                 this.stop(); this.retryCount = 0; this.url = url;
                 
-                // --- FORÇA REMOÇÃO DE CONTROLES (SOLICITAÇÃO DO USUÁRIO) ---
+                // --- SEM CONTROLES ---
                 this.video.controls = false; 
                 this.video.removeAttribute("controls");
 
-                // --- GEOMETRIA ---
                 if(isLive) {
                     this.video.classList.add('live-mode');
                     this.video.style.objectFit = 'fill';
@@ -294,7 +266,6 @@
                     this.video.style.objectFit = 'contain';
                 }
 
-                // VOD
                 if (!isLive) {
                     this.video.src = url;
                     this.video.play().catch(e=>{});
@@ -302,15 +273,22 @@
                     return; 
                 }
 
-                // LIVE HLS
+                // --- CONFIG FUTEBOL TURBO ---
                 this.video.ontimeupdate = null;
                 var isPC = Hls.isSupported() && !/(SMART-TV|SmartTV|NetCast|Tizen|Web0S)/.test(navigator.userAgent);
                 if(isLive && isPC && url.indexOf('.m3u8') === -1) url = url.replace('.ts', '.m3u8');
 
                 if (Hls.isSupported() && (isLive || url.includes('.m3u8'))) {
                     var config = { 
-                        maxBufferLength: 10, maxMaxBufferLength: 20, enableWorker: true, lowLatencyMode: true,
-                        backBufferLength: 10, manifestLoadingTimeOut: 20000, manifestLoadingMaxRetry: 5
+                        enableWorker: true,
+                        lowLatencyMode: false,      // Desativado para estabilidade
+                        backBufferLength: 0,        // Zera buffer anterior (RAM livre)
+                        maxBufferLength: 30,        
+                        maxMaxBufferLength: 60,     
+                        manifestLoadingTimeOut: 30000, 
+                        fragLoadingTimeOut: 30000,
+                        levelLoadingTimeOut: 30000,
+                        startLevel: -1
                     };
                     this.hls = new Hls(config);
                     this.hls.loadSource(url);
@@ -351,14 +329,14 @@
                         if(v.currentTime === this.lastTime) {
                             this.retryCount++;
                             if(this.retryCount > 2) {
-                                App.osd("RECARREGANDO...");
+                                App.osd("RECONECTANDO...");
                                 if(this.hls) this.hls.recoverMediaError(); else v.load();
                                 this.retryCount = 0;
                             }
                         } else { this.retryCount = 0; }
                         this.lastTime = v.currentTime;
                     }
-                }, 2000); 
+                }, 4000); 
             }
         };
 
@@ -463,7 +441,6 @@
                     document.getElementById('loader').classList.add('hide');
                     if(d) {
                         App.fullData=[]; 
-                        // Otimização: Array Push + Join é mais rápido que string +=
                         var htmlParts = [];
                         htmlParts.push('<div class="cat-item" id="c0" data-id="fav">⭐ FAVORITOS</div>');
                         for(var i=0;i<d.length;i++) htmlParts.push('<div class="cat-item" id="c'+(i+1)+'" data-id="'+d[i].category_id+'">'+d[i].category_name+'</div>');
@@ -507,7 +484,6 @@
                 var max = d.length > 500 ? 500 : d.length; 
                 if(max === 0) { document.getElementById('item-list').innerHTML = '<div style="padding:20px">Vazio</div>'; return; }
                 
-                // OTIMIZAÇÃO MAXIMA: Build de string eficiente
                 var htmlParts = [];
                 for(var i=0; i<max; i++) {
                     var n = d[i].name || d[i].title;
@@ -523,7 +499,6 @@
                 if(t.length < 3) return;
                 document.getElementById('item-list').innerHTML = '<div style="padding:20px">Buscando...</div>';
                 
-                // Pequeno delay para dar tempo da UI renderizar o "Buscando..." antes de travar no loop
                 setTimeout(function(){
                     if(App.globalData) { App.filterGlobal(t); } 
                     else {
@@ -537,7 +512,6 @@
 
             filterGlobal: function(term) {
                 var res = this.globalData.filter(function(x){
-                    // Verifica se existe antes de lowercase para evitar crash
                     var n = (x.name||x.title||"");
                     return n.toLowerCase().indexOf(term) > -1;
                 });
@@ -623,14 +597,11 @@
                     b.classList.add('fs'); 
                     this.osd("TELA CHEIA"); 
                     setTimeout(fixAspectRatio, 100);
-                    // Habilita controles APENAS em fullscreen e se não for Live (opcional)
-                    // Se preferir nunca ter controles, remova a linha abaixo
-                    // if(App.mode !== 'live') document.getElementById('player').controls = true; 
                 }
             },
             exitFull: function() { 
                 document.getElementById('vid-box').classList.remove('fs'); 
-                document.getElementById('player').controls = false; // Garante que some ao sair
+                document.getElementById('player').controls = false; 
                 setTimeout(fixAspectRatio, 100); 
             },
             
@@ -713,7 +684,6 @@
                 var v = document.getElementById('player');
                 if(k === 13) { if(App.mode === 'live') { App.toggleFull(); } else { if(v.paused) v.play(); else v.pause(); } return; }
                 if(k === 8 || k === 27 || k === 461) { App.toggleFull(); return; }
-                // SEEK COM SETAS (IMPORTANTE: JÁ QUE NÃO TEM BARRA DE PLAYER)
                 if(App.mode !== 'live') { if(k===37) v.currentTime-=15; if(k===39) v.currentTime+=15; }
                 return; 
             }
