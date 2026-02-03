@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD UNIVERSAL V16.5</title>
+    <title>R&C GOLD UNIVERSAL V16.6</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA GOLD V16.5 (Híbrido) --- */
+        /* --- TEMA GOLD V16.6 --- */
         :root { 
             --bg: #050505; 
             --gold: #FFD700; 
@@ -98,21 +98,21 @@
             border: none !important; 
         }
 
-        /* VÍDEO PADRÃO (Estilo V15 para Filmes/Séries) */
+        /* VÍDEO PADRÃO (Estilo V15 para Filmes/Séries) - SEM PROPORÇÃO FORÇADA */
         video { 
             width: 100%; height: 100%; 
             object-fit: contain; 
             background: #000; 
             outline: none;
-            position: relative; /* Default */
+            position: relative;
         }
 
-        /* Classe especial para AO VIVO (Estilo V16 para Correção) */
+        /* VÍDEO AO VIVO (Estilo V16 para Correção NetRange) */
         video.live-mode {
-            position: absolute; /* Permite controle manual JS */
+            position: absolute; /* Controle manual JS */
             top: 0; left: 0;
             width: 100%; height: 100%;
-            object-fit: fill; /* JS controla a proporção */
+            object-fit: fill; /* JS define proporção */
         }
 
         .osd-status { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: var(--gold); padding: 10px 20px; border-radius: 5px; font-weight: 800; display: none; border: 1px solid var(--gold); z-index: 10000; }
@@ -122,8 +122,7 @@
         .meta-epg { font-size: 13px; color: #fff; margin-bottom: 10px; background: #222; padding: 5px 10px; border-radius: 4px; display: inline-block; width: fit-content; }
         .meta-desc { font-size: 14px; color: #666; margin-bottom: auto; overflow-y: auto; max-height: 100px; }
         
-        .progress-container { width: 100%; height: 6px; background: #333; margin-top: 10px; border-radius: 3px; position: relative; display: none; }
-        .progress-bar { height: 100%; background: var(--gold); width: 0%; border-radius: 3px; }
+        /* BARRA REMOVIDA DAQUI */
         
         .keys { display: flex; gap: 20px; margin-top: 15px; padding: 15px; background: #111; border-radius: 8px; border: 1px solid #222; }
         .key { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: bold; color: #aaa; }
@@ -187,7 +186,6 @@
             <div class="meta">
                 <div id="meta-title" class="meta-title">R&C GOLD</div>
                 <div id="meta-epg" class="meta-epg hide">EPG...</div>
-                <div class="progress-container" id="vod-prog"><div class="progress-bar" id="vod-bar"></div></div>
                 <div id="meta-desc" class="meta-desc">Selecione um conteúdo.</div>
                 
                 <div class="keys">
@@ -202,9 +200,9 @@
     </div>
 
     <script>
-        // --- FUNÇÃO DE CORREÇÃO MANUAL (SÓ PARA LIVE) ---
+        // --- FUNÇÃO DE CORREÇÃO MANUAL (SÓ PARA LIVE - NETRANGE) ---
         function fixAspectRatio() {
-            // Se NÃO for Live, aborta e deixa o navegador cuidar (Estilo V15)
+            // Se NÃO for Live, cancela (usa nativo do browser)
             if(App.mode !== 'live') return;
 
             var v = document.getElementById('player');
@@ -270,7 +268,7 @@
                     // LIVE: Ativa modo de correção manual
                     this.video.classList.add('live-mode');
                     this.video.controls = false;
-                    this.video.style.objectFit = 'fill'; // Deixa o JS controlar
+                    this.video.style.objectFit = 'fill'; // JS controla a proporção
                 } else {
                     // VOD: Reseta para modo nativo (Igual V15)
                     this.video.classList.remove('live-mode');
@@ -282,20 +280,15 @@
                     this.video.controls = true; // Controles Nativos
                 }
 
+                // VOD PLAYER (SIMPLES, IGUAL V15)
                 if (!isLive) {
-                    // VOD PLAYER (NATIVO)
                     this.video.src = url;
                     this.video.play().catch(e=>console.log(e));
-                    this.video.ontimeupdate = function() {
-                        if(App.zone===3 || App.mode!=='live') {
-                            var p = (this.currentTime / this.duration) * 100;
-                            document.getElementById('vod-bar').style.width = p + '%';
-                        }
-                    };
+                    this.video.ontimeupdate = null; // Sem barra personalizada
                     return; 
                 }
 
-                // LIVE PLAYER (HLS + FIX)
+                // LIVE PLAYER (HLS + FIX NETRANGE)
                 this.video.ontimeupdate = null;
                 var isPC = Hls.isSupported() && !/(SMART-TV|SmartTV|NetCast|Tizen|Web0S)/.test(navigator.userAgent);
                 if(isLive && isPC && url.indexOf('.m3u8') === -1) url = url.replace('.ts', '.m3u8');
@@ -310,10 +303,9 @@
                     this.hls.attachMedia(this.video);
                     this.hls.on(Hls.Events.MANIFEST_PARSED, () => { 
                         this.video.play().catch(e=>console.log(e)); 
-                        setTimeout(fixAspectRatio, 500); // Aplica fix só no live
+                        setTimeout(fixAspectRatio, 500); // Aplica fix
                     });
                     this.hls.on(Hls.Events.LEVEL_SWITCHED, () => { setTimeout(fixAspectRatio, 500); });
-                    
                     this.hls.on(Hls.Events.ERROR, (event, data) => {
                         if (data.fatal) {
                             switch (data.type) {
@@ -445,7 +437,6 @@
                 document.getElementById('meta-title').innerText = "R&C GOLD";
                 document.getElementById('meta-desc').innerText = "Selecione um conteúdo.";
                 document.getElementById('meta-epg').classList.add('hide');
-                document.getElementById('vod-prog').style.display = 'none';
             },
 
             openMode: function(m) {
@@ -562,10 +553,11 @@
                 
                 var itemName = item.name || item.title;
                 document.getElementById('meta-title').innerText = itemName;
-                document.getElementById('meta-desc').innerText = "Carregando...";
+                document.getElementById('meta-desc').innerText = "Reproduzindo..."; // Voltou para Reproduzindo (V15)
                 document.getElementById('meta-epg').classList.add('hide');
 
                 if(this.mode === 'live') {
+                    document.getElementById('meta-desc').innerText = "Carregando...";
                     this.req(this.creds.h+"/player_api.php?username="+this.creds.u+"&password="+this.creds.p+"&action=get_short_epg&stream_id="+id, function(d){
                         if(d && d.epg_listings && d.epg_listings.length > 0) {
                             var e = d.epg_listings[0];
@@ -579,7 +571,7 @@
                             document.getElementById('meta-epg').classList.remove('hide');
                         }
                     });
-                } else { document.getElementById('vod-prog').style.display = 'block'; }
+                }
                 
                 if(this.currentPlayingUrl === url) { return; }
                 this.currentPlayingUrl = url;
