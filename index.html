@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD UNIVERSAL V16.4</title>
+    <title>R&C GOLD UNIVERSAL V16.5</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA GOLD V16.4 (NetRange Fix) --- */
+        /* --- TEMA GOLD V16.5 (Híbrido) --- */
         :root { 
             --bg: #050505; 
             --gold: #FFD700; 
@@ -80,17 +80,15 @@
         .item { padding: 14px 20px; border-bottom: 1px solid #1a1a1a; color: #bbb; white-space: nowrap; overflow: hidden; font-size: 14px; position: relative; }
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; font-size: 12px; }
         
-        /* PLAYER CONTAINER */
         .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; }
         
-        /* O "contain" visual só funciona se o browser respeitar. Se não, JS corrige. */
         .vid-box { 
             width: 100%; 
             height: 45vh; 
             background: #000; 
             position: relative; 
             border-bottom: 2px solid #333; 
-            overflow: hidden; /* Corta o excesso se o vídeo estourar */
+            overflow: hidden; 
         }
         
         .vid-box.fs { 
@@ -100,16 +98,23 @@
             border: none !important; 
         }
 
-        /* Vídeo Absoluto para controle manual */
+        /* VÍDEO PADRÃO (Estilo V15 para Filmes/Séries) */
         video { 
-            position: absolute; /* Controle total da posição */
-            top: 0; left: 0; 
             width: 100%; height: 100%; 
+            object-fit: contain; 
             background: #000; 
-            transform: translateZ(0); /* Aceleração Hardware */
+            outline: none;
+            position: relative; /* Default */
         }
 
-        /* OSD & INFO */
+        /* Classe especial para AO VIVO (Estilo V16 para Correção) */
+        video.live-mode {
+            position: absolute; /* Permite controle manual JS */
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: fill; /* JS controla a proporção */
+        }
+
         .osd-status { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: var(--gold); padding: 10px 20px; border-radius: 5px; font-weight: 800; display: none; border: 1px solid var(--gold); z-index: 10000; }
         
         .meta { padding: 30px; flex: 1; background: #050505; display: flex; flex-direction: column; overflow: hidden; }
@@ -197,38 +202,29 @@
     </div>
 
     <script>
-        // --- FUNÇÃO DE CORREÇÃO MANUAL DE PROPORÇÃO (NETRANGE FIX) ---
+        // --- FUNÇÃO DE CORREÇÃO MANUAL (SÓ PARA LIVE) ---
         function fixAspectRatio() {
+            // Se NÃO for Live, aborta e deixa o navegador cuidar (Estilo V15)
+            if(App.mode !== 'live') return;
+
             var v = document.getElementById('player');
             var box = document.getElementById('vid-box');
             if(!v || !box) return;
             
-            // Dimensões do Container
             var bw = box.offsetWidth;
             var bh = box.offsetHeight;
-            
-            // Dimensões do Vídeo (se não tiver loadedmetadata, usa padrão 16:9)
             var vw = v.videoWidth || 1920;
             var vh = v.videoHeight || 1080;
             
-            if(vw === 0 || vh === 0) return; // Evita divisão por zero
+            if(vw === 0 || vh === 0) return;
 
             var videoRatio = vw / vh;
             var boxRatio = bw / bh;
 
             var newW, newH;
+            if (videoRatio > boxRatio) { newW = bw; newH = bw / videoRatio; } 
+            else { newH = bh; newW = bh * videoRatio; }
 
-            // Se o vídeo for mais "largo" que a caixa (Letterbox Horizontal)
-            if (videoRatio > boxRatio) {
-                newW = bw;
-                newH = bw / videoRatio;
-            } else {
-                // Se o vídeo for mais "alto" ou igual (Pillarbox Vertical)
-                newH = bh;
-                newW = bh * videoRatio;
-            }
-
-            // Centraliza Manualmente
             v.style.width = newW + 'px';
             v.style.height = newH + 'px';
             v.style.left = ((bw - newW) / 2) + 'px';
@@ -257,10 +253,9 @@
             
             init: function() { 
                 this.video = document.getElementById('player'); 
-                // Monitora carregamento de metadados para ajustar tamanho
                 this.video.addEventListener('loadedmetadata', fixAspectRatio);
                 this.video.addEventListener('resize', fixAspectRatio);
-                window.addEventListener('resize', fixAspectRatio); // Ao entrar em fullscreen
+                window.addEventListener('resize', fixAspectRatio);
             },
 
             play: function(url, isLive) {
@@ -270,14 +265,27 @@
                 this.retryCount = 0;
                 this.url = url;
                 
-                // Reseta estilo antes de carregar
-                this.video.style.width = '100%';
-                this.video.style.height = '100%';
+                // --- LÓGICA DE GEOMETRIA HÍBRIDA ---
+                if(isLive) {
+                    // LIVE: Ativa modo de correção manual
+                    this.video.classList.add('live-mode');
+                    this.video.controls = false;
+                    this.video.style.objectFit = 'fill'; // Deixa o JS controlar
+                } else {
+                    // VOD: Reseta para modo nativo (Igual V15)
+                    this.video.classList.remove('live-mode');
+                    this.video.style.width = '100%';
+                    this.video.style.height = '100%';
+                    this.video.style.top = '';
+                    this.video.style.left = '';
+                    this.video.style.objectFit = 'contain';
+                    this.video.controls = true; // Controles Nativos
+                }
 
                 if (!isLive) {
-                    this.video.controls = true; 
+                    // VOD PLAYER (NATIVO)
                     this.video.src = url;
-                    this.video.play().then(() => { setTimeout(fixAspectRatio, 500); }).catch(e=>console.log(e));
+                    this.video.play().catch(e=>console.log(e));
                     this.video.ontimeupdate = function() {
                         if(App.zone===3 || App.mode!=='live') {
                             var p = (this.currentTime / this.duration) * 100;
@@ -287,8 +295,7 @@
                     return; 
                 }
 
-                // LIVE
-                this.video.controls = false;
+                // LIVE PLAYER (HLS + FIX)
                 this.video.ontimeupdate = null;
                 var isPC = Hls.isSupported() && !/(SMART-TV|SmartTV|NetCast|Tizen|Web0S)/.test(navigator.userAgent);
                 if(isLive && isPC && url.indexOf('.m3u8') === -1) url = url.replace('.ts', '.m3u8');
@@ -303,8 +310,7 @@
                     this.hls.attachMedia(this.video);
                     this.hls.on(Hls.Events.MANIFEST_PARSED, () => { 
                         this.video.play().catch(e=>console.log(e)); 
-                        // Chama a correção manual após iniciar
-                        setTimeout(fixAspectRatio, 500);
+                        setTimeout(fixAspectRatio, 500); // Aplica fix só no live
                     });
                     this.hls.on(Hls.Events.LEVEL_SWITCHED, () => { setTimeout(fixAspectRatio, 500); });
                     
