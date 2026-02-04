@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD V31 FINAL LOGIN FIX</title>
+    <title>R&C GOLD V32 FINAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V31 --- */
+        /* --- TEMA R&C GOLD V32 FINAL --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -341,7 +341,7 @@
                 var u = document.getElementById('i1').value.trim();
                 var p = document.getElementById('i2').value.trim();
                 
-                // --- CORREÇÃO DO LOGIN (URL LIMPA) ---
+                // CORREÇÃO: URL LIMPA
                 if(h.endsWith('/')) h = h.slice(0, -1);
                 if(h.indexOf('http') === -1) h = 'http://' + h;
                 
@@ -540,6 +540,8 @@
                 if(this.zone===1) { this.zone=2; this.idx=0; this.updateFocus(); return; }
                 if(this.zone===0) { this.setScr(1); return; }
             },
+            
+            // --- CORREÇÃO DE FOCO (ANTI-TECLADO) ---
             updateFocus: function() {
                 document.querySelectorAll('.focused').forEach(function(e){e.classList.remove('focused')});
                 var el;
@@ -553,7 +555,16 @@
                 }
                 if(el) {
                     el.classList.add('focused'); 
-                    if(el.tagName==='INPUT') { el.focus(); } else { el.blur(); } 
+                    if(el.tagName==='INPUT') { 
+                        el.focus(); 
+                    } else { 
+                        // SE NÃO FOR INPUT, FORÇA O BLUR EM TUDO PARA O TECLADO NÃO ABRIR
+                        document.getElementById('i0').blur();
+                        document.getElementById('i1').blur();
+                        document.getElementById('i2').blur();
+                        document.getElementById('search').blur();
+                        el.focus(); 
+                    }
                     if(el.tagName!=='INPUT') el.scrollIntoView({block:'center',behavior:'smooth'}); 
                 }
             },
@@ -617,6 +628,22 @@
 
         document.addEventListener('keydown', function(e) {
             var k=e.keyCode;
+            
+            // --- CORREÇÃO DO ENTER NA TELA DE LOGIN ---
+            if(App.scr === 0) {
+                if(k===13) {
+                    e.preventDefault(); // Impede o teclado de abrir
+                    if(App.idx === 3) {
+                        // Garante que o foco saia dos inputs antes de logar
+                        document.getElementById('i0').blur();
+                        document.getElementById('i1').blur();
+                        document.getElementById('i2').blur();
+                        App.login();
+                    }
+                    return;
+                }
+            }
+
             if(k===48 || k===96) { if(App.scr===2 && App.zone===2) { var it=App.fullData[App.idx]; if(it) FavManager.toggle(it.stream_id||it.series_id); } }
             if(document.getElementById('vid-box').classList.contains('fs')) { 
                 e.preventDefault(); 
