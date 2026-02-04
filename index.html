@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD UNIVERSAL V17 TURBO</title>
+    <title>R&C GOLD V18 NETRANGE FIX</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA GOLD V17 (TURBO EDITION) --- */
+        /* --- TEMA GOLD V18 (NETRANGE SPECIFIC) --- */
         :root { 
             --bg: #050505; 
             --gold: #FFD700; 
@@ -24,22 +24,21 @@
             background-color: var(--bg); color: var(--text);
             font-family: 'Montserrat', sans-serif;
             width: 100vw; height: 100vh; overflow: hidden;
-            transform: translateZ(0); /* Aceleração GPU */
-            backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
         .hide { display: none !important; }
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; background: #000; }
 
-        /* FOCO LEVE (Otimizado para não engasgar) */
+        /* FOCO */
         .focused {
             border: 3px solid #fff !important;
             background: var(--focus-bg) !important;
             color: #000 !important;
             font-weight: 800;
             z-index: 20;
-            transform: scale(1.02); /* Scale leve */
+            transform: scale(1.02);
         }
         .focused i { color: #000 !important; }
         .playing-item { color: var(--gold) !important; border-left: 3px solid var(--gold); background: #151515; }
@@ -94,18 +93,17 @@
             padding: 14px 20px; border-bottom: 1px solid #1a1a1a; color: #bbb; 
             font-size: 14px; position: relative; display: block;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-            transform: translateZ(0); /* Performance */
+            transform: translateZ(0);
         }
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; font-size: 12px; }
         
         .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; min-width: 0; }
         
-        /* CORREÇÃO DO ASPECT RATIO VIA CSS (Sem JS bugado) */
+        /* CORREÇÃO CRÍTICA DO VÍDEO PARA PHILCO */
         .vid-box { 
             width: 100%; height: 45vh; background: #000; 
             position: relative; border-bottom: 2px solid #333; 
             overflow: hidden; 
-            display: flex; align-items: center; justify-content: center;
         }
         .vid-box.fs { 
             position: fixed; top: 0; left: 0; 
@@ -113,13 +111,20 @@
             z-index: 9999; border: none !important; 
         }
 
+        /* O segredo para corrigir a "janelinha" na Netrange: Absolute + 100% fixo */
         video { 
-            max-width: 100%; max-height: 100%; 
-            width: auto; height: auto;
-            background: #000; outline: none; 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100% !important; 
+            height: 100% !important; 
+            background: #000; 
+            object-fit: contain; /* Tenta manter proporção */
+            border: none;
+            outline: none;
         }
-        /* No modo live, se quiser esticar, troque contain por fill. Mas contain é mais seguro. */
-        video.live-mode { object-fit: contain; } 
+        
+        /* Em modo live, forçamos preenchimento se necessário */
+        video.live-mode { object-fit: fill; } 
 
         .osd-status { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: var(--gold); padding: 10px 20px; border-radius: 5px; font-weight: 800; display: none; border: 1px solid var(--gold); z-index: 10000; }
         
@@ -225,7 +230,6 @@
             
             init: function() { 
                 this.video = document.getElementById('player'); 
-                // Removemos o fixAspectRatio JS, o CSS cuida disso agora
             },
 
             play: function(url, isLive) {
@@ -241,20 +245,19 @@
                     this.video.classList.remove('live-mode');
                 }
 
-                // --- OTIMIZAÇÃO: CONFIGURAÇÃO PARA TVS FRACAS ---
+                // --- CONFIG HLS ESTABILIZADA ---
                 if (Hls.isSupported() && (isLive || url.includes('.m3u8'))) {
                     var config = { 
                         enableWorker: true,
-                        // Buffers reduzidos para economizar RAM
-                        maxBufferLength: 10,       
-                        maxMaxBufferLength: 20,
-                        backBufferLength: 0, // Não armazena o passado (crucial para live)
-                        // Ajudam na estabilidade da imagem
-                        capLevelToPlayerSize: true, 
-                        startLevel: -1,
-                        liveSyncDurationCount: 3, // Sincronia suave
+                        // Relaxamos um pouco o buffer para evitar tela preta
+                        maxBufferLength: 15,       
+                        maxMaxBufferLength: 30,
+                        backBufferLength: 0,
+                        capLevelToPlayerSize: false, // Deixa a TV decidir a resolução
+                        startLevel: -1, // Auto
                         manifestLoadingTimeOut: 20000, 
-                        fragLoadingTimeOut: 20000
+                        fragLoadingTimeOut: 20000,
+                        liveSyncDurationCount: 4 // Aumentado levemente para estabilidade
                     };
                     
                     this.hls = new Hls(config);
@@ -274,7 +277,6 @@
                     });
                     this.startMonitor(isLive);
                 } else {
-                    // MP4 ou Players nativos
                     this.video.src = url;
                     this.video.play().catch(e=>{});
                 }
@@ -299,15 +301,19 @@
                     if(!v.paused && v.readyState > 2) {
                         if(v.currentTime === this.lastTime) {
                             this.retryCount++;
-                            if(this.retryCount > 4) { // Mais tolerante antes de reiniciar
-                                App.osd("RECONECTANDO...");
-                                if(this.hls) this.hls.recoverMediaError(); else v.load();
+                            if(this.retryCount > 3) {
+                                App.osd("RECARREGANDO...");
+                                if(this.hls) {
+                                    this.hls.recoverMediaError(); 
+                                    // Força um jump se estiver muito atrasado
+                                    if(this.hls.liveSyncPosition) v.currentTime = this.hls.liveSyncPosition;
+                                } else v.load();
                                 this.retryCount = 0;
                             }
                         } else { this.retryCount = 0; }
                         this.lastTime = v.currentTime;
                     }
-                }, 3000); 
+                }, 4000); 
             }
         };
 
@@ -426,12 +432,10 @@
                 this.lastCatIdx = catIdx; 
                 var el = document.getElementById('c'+catIdx); if(!el) return;
                 var cid = el.getAttribute('data-id');
-                
-                // Otimização visual
                 var all=document.querySelectorAll('.cat-item'); for(var i=0;i<all.length;i++) all[i].classList.remove('active');
                 el.classList.add('active');
                 
-                // Limpeza agressiva para GC
+                // GC Limpeza
                 document.getElementById('item-list').innerHTML="";
                 this.fullData = [];
 
@@ -458,7 +462,7 @@
             },
 
             renderList: function(d) {
-                // OTIMIZAÇÃO DE RENDERIZAÇÃO: Max 100 itens para não travar
+                // Max 100 itens para performance
                 var max = d.length > 100 ? 100 : d.length; 
                 if(max === 0) { document.getElementById('item-list').innerHTML = '<div style="padding:20px; color:#555">Vazio</div>'; return; }
                 
@@ -550,7 +554,6 @@
                 if(this.currentPlayingUrl === url) { return; }
                 this.currentPlayingUrl = url;
                 
-                // Dispara o player sem atrasos artificiais
                 PlayerEngine.play(url, this.mode === 'live');
                 var all=document.querySelectorAll('.item'); for(var i=0;i<all.length;i++) all[i].classList.remove('playing-item');
                 if(document.getElementById('it'+this.idx)) document.getElementById('it'+this.idx).classList.add('playing-item');
@@ -623,19 +626,16 @@
                 if(this.scr===1) { if(d===3 && this.idx<3) this.idx++; if(d===2 && this.idx>0) this.idx--; }
                 if(this.scr===2) {
                     if(this.zone===3) { if(d===2) { this.zone=2; this.updateFocus(); } return; }
-                    // ZONA 0: CATEGORIAS
                     if(this.zone===0) { 
                         var max = document.querySelectorAll('.cat-item').length - 1;
                         if(d===1 && this.idx<max) this.idx++; 
                         if(d===0 && this.idx>0) this.idx--; 
-                        // CORREÇÃO PEDIDA: DIREITA SÓ FOCA, NÃO CARREGA
                         if(d===3) { 
                             if(App.fullData.length > 0) {
                                 this.zone = 2; this.idx = 0; this.updateFocus();
                             }
                         }
                     }
-                    // ZONA 2: LISTA
                     else if(this.zone===2) {
                         var dataList = this.isFolder ? this.seriesEps : this.fullData;
                         var max = dataList.length - 1;
@@ -654,7 +654,7 @@
                 if(this.scr===0) this.login();
                 if(this.scr===1) { var m=['live','movie','series']; if(this.idx<3) this.openMode(m[this.idx]); else this.logout(); }
                 if(this.scr===2) {
-                    if(this.zone===0) this.loadContent(this.idx); // OK na categoria carrega
+                    if(this.zone===0) this.loadContent(this.idx);
                     else if(this.zone===2) this.clickItem();
                     else if(this.zone===3) { this.toggleFull(); }
                 }
