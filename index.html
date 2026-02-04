@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>R&C GOLD V40 FINAL</title>
+    <title>R&C GOLD V41 UNIVERSAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V40 --- */
+        /* --- TEMA R&C GOLD V41 UNIVERSAL --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -30,6 +30,9 @@
         .hide { display: none !important; }
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; background: #000; }
+
+        /* CURSOR MÃOZINHA PARA PC */
+        button, .smart-card, .cat-item, .item, .power-btn, .key { cursor: pointer; }
 
         /* FOCO PADRÃO */
         .focused {
@@ -137,14 +140,14 @@
         .col-cat { width: 25%; background: #0b0b0b; border-right: 1px solid #222; display: flex; flex-direction: column; }
         .cat-head { padding: 20px; background: #111; color: var(--gold); font-weight: 900; text-align: center; border-bottom: 2px solid var(--gold); }
         .cat-list { flex: 1; overflow-y: auto; }
-        .cat-item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #999; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
+        .cat-item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #999; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .cat-item.active { border-left: 5px solid var(--gold); background: #181818; color: #fff; }
 
         .col-list { width: 35%; background: #111; border-right: 1px solid #222; display: flex; flex-direction: column; }
         .search-area { padding: 15px; background: #080808; border-bottom: 1px solid #333; display: flex; align-items: center; }
         .inp-search { width: 100%; background: #222; border: 1px solid #333; color: #fff; padding: 12px; text-align: center; font-weight: bold; border-radius: 6px; text-transform: uppercase; }
         .item-list { flex: 1; overflow-y: auto; }
-        .item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #bbb; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
+        .item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #bbb; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .item.playing { color: var(--gold); font-weight: bold; background: #181818; border-left: 3px solid var(--gold); }
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; }
 
@@ -298,13 +301,10 @@
                     this.video.src = url; this.video.play().catch(function(e){ console.log(e); }); return;
                 }
                 
-                // --- RESTAURAÇÃO LOGICA V37 (PHILCO COMPATÍVEL) ---
-                // Prioriza player nativo da TV. Só usa hls.js se a TV não suportar nativamente.
                 var canPlayNative = this.video.canPlayType('application/vnd.apple.mpegurl');
                 if (canPlayNative === "probably" || canPlayNative === "maybe") {
                     this.video.src = url; 
                     this.video.play().catch(function(e){ 
-                        // Se falhar nativo, tenta hls.js
                         if(Hls.isSupported()) PlayerEngine.startHls(url); 
                     });
                 } else if (Hls.isSupported()) {
@@ -313,7 +313,7 @@
             },
             startHls: function(url) {
                 if(this.hls) this.hls.destroy();
-                // Configuração mais leve para TVs antigas (V37 Style)
+                // CONFIGURAÇÃO BALANCEADA (COMPATIVEL COM PC E TV)
                 var config = { enableWorker:true, maxBufferLength:10, startLevel:-1, manifestLoadingTimeOut:15000 };
                 this.hls = new Hls(config);
                 this.hls.loadSource(url);
@@ -330,7 +330,7 @@
                     if(!v || !PlayerEngine.url || v.paused) return;
                     if(Math.abs(v.currentTime - PlayerEngine.lastTime) < 0.1) {
                         PlayerEngine.stallCount++;
-                        if(PlayerEngine.stallCount > 5) { // Tolerancia maior para TV lenta
+                        if(PlayerEngine.stallCount > 5) { 
                             App.osd("RECONECTANDO..."); PlayerEngine.recover(); 
                         }
                     } else { PlayerEngine.stallCount = 0; PlayerEngine.lastTime = v.currentTime; }
@@ -390,7 +390,9 @@
             req: function(url, cb) {
                 var x = new XMLHttpRequest(); x.open("GET", url, true); x.timeout = 25000;
                 x.onload = function() { if(x.status===200) { try{cb(JSON.parse(x.responseText));}catch(e){cb(null);} } else cb(null); };
-                x.onerror = function(){ cb(null); }; x.send();
+                // AQUI DETECTA ERRO DE CONEXÃO/CORS
+                x.onerror = function(){ cb('ERR_NET'); }; 
+                x.send();
             },
 
             login: function() {
@@ -406,6 +408,10 @@
                 
                 this.req(h+"/player_api.php?username="+u+"&password="+p, function(d){
                     document.getElementById('loader').classList.add('hide');
+                    if(d === 'ERR_NET') {
+                        document.getElementById('msg-login').innerHTML = "Falha de Conexão!<br>Se for PC, instale extensão CORS.";
+                        return;
+                    }
                     if(d && d.user_info && d.user_info.auth==1) {
                         App.creds={h:h,u:u,p:p};
                         localStorage.setItem('rc_h', h); localStorage.setItem('rc_u', u); localStorage.setItem('rc_p', p);
@@ -415,7 +421,7 @@
                         document.getElementById('info-exp').innerText = exp;
                         document.getElementById('info-conn').innerText = conn;
                         App.setScr(1);
-                    } else document.getElementById('msg-login').innerText="Login Falhou";
+                    } else document.getElementById('msg-login').innerText="Usuário/Senha Inválidos";
                 });
             },
             logout: function() { localStorage.clear(); location.reload(); },
@@ -440,7 +446,7 @@
                 var act = (m==='live')?'get_live_categories':(m==='movie'?'get_vod_categories':'get_series_categories');
                 this.req(this.creds.h+"/player_api.php?username="+this.creds.u+"&password="+this.creds.p+"&action="+act, function(d){
                     document.getElementById('loader').classList.add('hide');
-                    if(d) {
+                    if(d && d!=='ERR_NET') {
                         var h = '<div class="cat-item" id="c0" data-id="fav" onclick="App.catClick(0)">⭐ FAVORITOS</div>';
                         for(var i=0;i<d.length;i++) h += '<div class="cat-item" id="c'+(i+1)+'" data-id="'+d[i].category_id+'" onclick="App.catClick('+(i+1)+')">'+d[i].category_name+'</div>';
                         document.getElementById('cat-list').innerHTML = h;
@@ -473,13 +479,13 @@
 
                 var onData = function(d) {
                     document.getElementById('loader').classList.add('hide');
-                    if(d) { App.fullData = d; App.isFolder = false; App.renderList(); }
+                    if(d && d!=='ERR_NET') { App.fullData = d; App.isFolder = false; App.renderList(); }
                 };
 
                 if(cid === 'fav') {
                      var act = (this.mode==='live')?'get_live_streams':(this.mode==='movie'?'get_vod_streams':'get_series');
                      this.req(this.creds.h+"/player_api.php?username="+this.creds.u+"&password="+this.creds.p+"&action="+act, function(d){
-                        if(d) { App.fullData = d.filter(function(x){ return FavManager.isFav(x.stream_id || x.series_id); }); App.isFolder=false; App.renderList(); }
+                        if(d && d!=='ERR_NET') { App.fullData = d.filter(function(x){ return FavManager.isFav(x.stream_id || x.series_id); }); App.isFolder=false; App.renderList(); }
                         document.getElementById('loader').classList.add('hide');
                      });
                 } else {
@@ -563,7 +569,7 @@
                 if(t.length < 2) return;
                 document.getElementById('item-list').innerHTML = '<div style="padding:20px">Buscando...</div>';
                 var cb = function(d) {
-                    if(d) { 
+                    if(d && d!=='ERR_NET') { 
                         App.fullData = d.filter(function(x){ return (x.name||x.title||"").toLowerCase().indexOf(t) > -1 }); 
                         App.isFolder = false; 
                         App.renderList(); 
