@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD V18 NETRANGE FIX</title>
+    <title>R&C GOLD V19 LIVE FIX</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA GOLD V18 (NETRANGE SPECIFIC) --- */
+        /* --- TEMA GOLD V19 (FINAL STABLE) --- */
         :root { 
             --bg: #050505; 
             --gold: #FFD700; 
@@ -99,7 +99,7 @@
         
         .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; min-width: 0; }
         
-        /* CORREÇÃO CRÍTICA DO VÍDEO PARA PHILCO */
+        /* CORREÇÃO DO VÍDEO ABSOLUTO */
         .vid-box { 
             width: 100%; height: 45vh; background: #000; 
             position: relative; border-bottom: 2px solid #333; 
@@ -111,20 +111,16 @@
             z-index: 9999; border: none !important; 
         }
 
-        /* O segredo para corrigir a "janelinha" na Netrange: Absolute + 100% fixo */
         video { 
             position: absolute;
             top: 0; left: 0;
             width: 100% !important; 
             height: 100% !important; 
             background: #000; 
-            object-fit: contain; /* Tenta manter proporção */
-            border: none;
-            outline: none;
+            object-fit: contain; 
+            border: none; outline: none;
         }
-        
-        /* Em modo live, forçamos preenchimento se necessário */
-        video.live-mode { object-fit: fill; } 
+        video.live-mode { object-fit: fill; } /* Estica se for ao vivo */
 
         .osd-status { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: var(--gold); padding: 10px 20px; border-radius: 5px; font-weight: 800; display: none; border: 1px solid var(--gold); z-index: 10000; }
         
@@ -226,10 +222,17 @@
         };
 
         var PlayerEngine = {
-            hls: null, video: null, url: null, retryCount: 0, monitorInterval: null, lastTime: 0,
+            hls: null, video: null, url: null, retryCount: 0,
             
             init: function() { 
                 this.video = document.getElementById('player'); 
+                // Handler de erro nativo para tentar fallback
+                this.video.onerror = function() {
+                    console.log("Erro Nativo, tentando recuperação...");
+                    if(App.mode === 'live' && !PlayerEngine.hls) {
+                        PlayerEngine.startHls(PlayerEngine.url);
+                    }
+                };
             },
 
             play: function(url, isLive) {
@@ -241,79 +244,71 @@
 
                 if(isLive) {
                     this.video.classList.add('live-mode');
+                    // FIX: Converte link .ts para .m3u8 para compatibilidade nativa
+                    if(url.indexOf('.m3u8') === -1) {
+                        url = url.replace('.ts', '.m3u8');
+                        this.url = url; // Atualiza url interna
+                    }
                 } else {
                     this.video.classList.remove('live-mode');
                 }
 
-                // --- CONFIG HLS ESTABILIZADA ---
-                if (Hls.isSupported() && (isLive || url.includes('.m3u8'))) {
-                    var config = { 
-                        enableWorker: true,
-                        // Relaxamos um pouco o buffer para evitar tela preta
-                        maxBufferLength: 15,       
-                        maxMaxBufferLength: 30,
-                        backBufferLength: 0,
-                        capLevelToPlayerSize: false, // Deixa a TV decidir a resolução
-                        startLevel: -1, // Auto
-                        manifestLoadingTimeOut: 20000, 
-                        fragLoadingTimeOut: 20000,
-                        liveSyncDurationCount: 4 // Aumentado levemente para estabilidade
-                    };
-                    
-                    this.hls = new Hls(config);
-                    this.hls.loadSource(url);
-                    this.hls.attachMedia(this.video);
-                    this.hls.on(Hls.Events.MANIFEST_PARSED, () => { 
-                        this.video.play().catch(e=>{}); 
+                // --- ESTRATÉGIA V19: TENTA NATIVO PRIMEIRO (Melhor para Philco) ---
+                var canPlayNative = this.video.canPlayType('application/vnd.apple.mpegurl');
+                
+                if (isLive && (canPlayNative === "probably" || canPlayNative === "maybe")) {
+                    console.log("Tentando Playback Nativo...");
+                    this.video.src = url;
+                    this.video.play().catch(e => {
+                        console.log("Erro play nativo:", e);
+                        // Se falhar nativo, tenta HLS.js
+                        if(Hls.isSupported()) this.startHls(url);
                     });
-                    this.hls.on(Hls.Events.ERROR, (event, data) => {
-                        if (data.fatal) {
-                            switch (data.type) {
-                                case Hls.ErrorTypes.NETWORK_ERROR: this.hls.startLoad(); break;
-                                case Hls.ErrorTypes.MEDIA_ERROR: this.hls.recoverMediaError(); break;
-                                default: this.stop(); break;
-                            }
-                        }
-                    });
-                    this.startMonitor(isLive);
-                } else {
+                } 
+                else if (Hls.isSupported() && (isLive || url.includes('.m3u8'))) {
+                    this.startHls(url);
+                } 
+                else {
+                    // MP4 / Outros
                     this.video.src = url;
                     this.video.play().catch(e=>{});
                 }
+            },
+
+            startHls: function(url) {
+                if(this.hls) { this.hls.destroy(); }
+                var config = { 
+                    enableWorker: true,
+                    maxBufferLength: 10,       
+                    backBufferLength: 0,
+                    startLevel: -1,
+                    manifestLoadingTimeOut: 20000, 
+                };
+                this.hls = new Hls(config);
+                this.hls.loadSource(url);
+                this.hls.attachMedia(this.video);
+                this.hls.on(Hls.Events.MANIFEST_PARSED, () => { 
+                    this.video.play().catch(e=>{}); 
+                });
+                // Tratamento de erro básico
+                this.hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR: this.hls.startLoad(); break;
+                            case Hls.ErrorTypes.MEDIA_ERROR: this.hls.recoverMediaError(); break;
+                            default: this.stop(); break;
+                        }
+                    }
+                });
             },
 
             stop: function() {
                 if(this.hls) { this.hls.destroy(); this.hls = null; }
                 if(this.video) { 
                     this.video.pause(); 
-                    this.video.removeAttribute('src'); 
+                    this.video.removeAttribute('src'); // Limpa fonte
                     this.video.load(); 
                 }
-                clearInterval(this.monitorInterval);
-            },
-
-            startMonitor: function(isLive) {
-                if(!isLive) return;
-                clearInterval(this.monitorInterval);
-                this.lastTime = 0;
-                this.monitorInterval = setInterval(() => {
-                    var v = this.video;
-                    if(!v.paused && v.readyState > 2) {
-                        if(v.currentTime === this.lastTime) {
-                            this.retryCount++;
-                            if(this.retryCount > 3) {
-                                App.osd("RECARREGANDO...");
-                                if(this.hls) {
-                                    this.hls.recoverMediaError(); 
-                                    // Força um jump se estiver muito atrasado
-                                    if(this.hls.liveSyncPosition) v.currentTime = this.hls.liveSyncPosition;
-                                } else v.load();
-                                this.retryCount = 0;
-                            }
-                        } else { this.retryCount = 0; }
-                        this.lastTime = v.currentTime;
-                    }
-                }, 4000); 
             }
         };
 
@@ -435,7 +430,6 @@
                 var all=document.querySelectorAll('.cat-item'); for(var i=0;i<all.length;i++) all[i].classList.remove('active');
                 el.classList.add('active');
                 
-                // GC Limpeza
                 document.getElementById('item-list').innerHTML="";
                 this.fullData = [];
 
@@ -462,7 +456,6 @@
             },
 
             renderList: function(d) {
-                // Max 100 itens para performance
                 var max = d.length > 100 ? 100 : d.length; 
                 if(max === 0) { document.getElementById('item-list').innerHTML = '<div style="padding:20px; color:#555">Vazio</div>'; return; }
                 
