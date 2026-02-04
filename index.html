@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD V37 FINAL PERFECT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>R&C GOLD V38 FINAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V37 FINAL --- */
+        /* --- TEMA R&C GOLD V38 --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -17,7 +17,7 @@
             --focus-grad: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
         }
         
-        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; user-select: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; user-select: none; -webkit-tap-highlight-color: transparent; }
         
         body {
             background-color: var(--bg); 
@@ -36,24 +36,22 @@
             border: 3px solid #fff !important;
             background: var(--focus-grad) !important;
             color: #000 !important;
-            transform: scale(1.05); /* Zoom padrão para itens */
+            transform: scale(1.05);
             z-index: 50;
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
         }
         
-        /* --- CORREÇÃO DO PLAYER (PREVIEW E FULLSCREEN) --- */
-        
-        /* 1. MODO PREVIEW (Janelinha): Sem Zoom, Apenas Borda */
+        /* CORREÇÃO DO PLAYER */
         #vid-box.focused {
-            transform: none !important; /* Anula o zoom do .focused */
+            transform: none !important;
             border: 4px solid var(--gold) !important;
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
             z-index: 60;
         }
 
-        /* 2. MODO FULLSCREEN (Tela Cheia): ZERO Borda, ZERO Zoom */
+        /* FULLSCREEN */
         #vid-box.fs, #vid-box.fs.focused {
-            transform: none !important; /* GARANTE QUE NÃO TEM ZOOM NO OK */
+            transform: none !important;
             border: none !important;
             box-shadow: none !important;
             position: fixed !important;
@@ -64,9 +62,9 @@
 
         .focused i, .focused span, .focused div { color: #000 !important; }
 
-        /* LOGIN */
+        /* LOGIN RESPONSIVO */
         .login-box { 
-            width: 400px; padding: 40px; 
+            width: 400px; max-width: 90%; padding: 40px; 
             background: #111; border: 1px solid #333; 
             border-radius: 12px; text-align: center; 
         }
@@ -80,6 +78,20 @@
             display: flex; flex-direction: column; 
             padding: 40px 60px;
             justify-content: space-between;
+        }
+
+        /* Ajustes Mobile Dashboard */
+        @media (max-width: 768px) {
+            #dash-layer { padding: 20px; }
+            .dash-grid { flex-direction: column; gap: 20px; overflow-y: auto; }
+            .smart-card { width: 100%; height: 100px; flex-direction: row; gap: 20px; }
+            .smart-card i { margin-bottom: 0; font-size: 40px; }
+            .col-cat { width: 30%; } /* Menu lateral maior no mobile */
+            .col-list { width: 70%; border: none; }
+            .col-play { position: fixed; bottom: 0; left: 0; width: 100%; height: auto; z-index: 100; border-top: 2px solid #333; }
+            .vid-box { height: 200px; }
+            .meta { display: none; } /* Esconde meta infos no celular vertical para economizar espaço */
+            #content-layer { flex-wrap: wrap; }
         }
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; height: 80px; }
@@ -125,14 +137,14 @@
         .col-cat { width: 25%; background: #0b0b0b; border-right: 1px solid #222; display: flex; flex-direction: column; }
         .cat-head { padding: 20px; background: #111; color: var(--gold); font-weight: 900; text-align: center; border-bottom: 2px solid var(--gold); }
         .cat-list { flex: 1; overflow-y: auto; }
-        .cat-item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #999; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .cat-item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #999; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
         .cat-item.active { border-left: 5px solid var(--gold); background: #181818; color: #fff; }
 
         .col-list { width: 35%; background: #111; border-right: 1px solid #222; display: flex; flex-direction: column; }
         .search-area { padding: 15px; background: #080808; border-bottom: 1px solid #333; display: flex; align-items: center; }
         .inp-search { width: 100%; background: #222; border: 1px solid #333; color: #fff; padding: 12px; text-align: center; font-weight: bold; border-radius: 6px; text-transform: uppercase; }
         .item-list { flex: 1; overflow-y: auto; }
-        .item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #bbb; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .item { padding: 15px 25px; border-bottom: 1px solid #1a1a1a; color: #bbb; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; cursor: pointer; }
         .item.playing { color: var(--gold); font-weight: bold; background: #181818; border-left: 3px solid var(--gold); }
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; }
 
@@ -152,9 +164,20 @@
         .dot { width: 12px; height: 12px; border-radius: 50%; }
 
         #loader { background: rgba(0,0,0,0.95); z-index: 20000; flex-direction: column; color: var(--gold); font-weight: 900; }
-        .osd-status { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.8); color: var(--gold); padding: 10px 20px; border-radius: 5px; font-weight: 800; display: none; border: 1px solid var(--gold); z-index: 10000; }
         
-        ::-webkit-scrollbar { width: 0px; }
+        /* CORREÇÃO OSD - FORÇA A COR DOURADA MESMO COM FOCO */
+        .osd-status { 
+            position: absolute; top: 20px; right: 20px; 
+            background: rgba(0,0,0,0.8); 
+            color: var(--gold) !important; 
+            padding: 10px 20px; border-radius: 5px; 
+            font-weight: 800; display: none; 
+            border: 1px solid var(--gold); 
+            z-index: 10000; pointer-events: none;
+        }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
     </style>
 </head>
 <body onload="App.init()">
@@ -236,7 +259,7 @@
                     <div class="key"><div class="dot" style="background:#ff4444"></div> TELA CHEIA</div>
                     <div class="key"><div class="dot" style="background:#00C851"></div> TOPO</div>
                     <div class="key"><div class="dot" style="background:#ffbb33"></div> BUSCAR</div>
-                    <div class="key"><div class="dot" style="background:#33b5e5"></div> MENU PRINCIPAL</div>
+                    <div class="key"><div class="dot" style="background:#33b5e5"></div> VOLTAR</div>
                 </div>
             </div>
         </div>
@@ -282,13 +305,39 @@
             },
             startHls: function(url) {
                 if(this.hls) this.hls.destroy();
-                var config = { enableWorker:true, maxBufferLength:10, startLevel:-1, manifestLoadingTimeOut:15000 };
+                // CONFIGURAÇÃO OTIMIZADA PARA ESTABILIDADE (FUTEBOL SEM TRAVAR)
+                var config = { 
+                    enableWorker: true,
+                    maxBufferLength: 30, // Buffer maior para aguentar oscilação
+                    maxMaxBufferLength: 60,
+                    startLevel: -1,
+                    manifestLoadingTimeOut: 20000,
+                    levelLoadingTimeOut: 20000,
+                    fragLoadingTimeOut: 20000,
+                    enableSoftwareAES: true,
+                    liveSyncDurationCount: 3, // Mantém um pouco atrás do "ao vivo" real para garantir buffer
+                    liveMaxLatencyDurationCount: 10
+                };
                 this.hls = new Hls(config);
                 this.hls.loadSource(url);
                 this.hls.attachMedia(this.video);
                 this.hls.on(Hls.Events.MANIFEST_PARSED, function() { PlayerEngine.video.play().catch(function(e){}); });
                 this.hls.on(Hls.Events.ERROR, function(event, data) {
-                    if (data.fatal) { if(data.type === Hls.ErrorTypes.NETWORK_ERROR) PlayerEngine.hls.startLoad(); else PlayerEngine.recover(); }
+                    if (data.fatal) { 
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log("Erro de Rede, tentando recuperar...");
+                                PlayerEngine.hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log("Erro de Midia, tentando recuperar...");
+                                PlayerEngine.hls.recoverMediaError();
+                                break;
+                            default:
+                                PlayerEngine.recover();
+                                break;
+                        }
+                    }
                 });
             },
             startMonitor: function() {
@@ -298,21 +347,25 @@
                     if(!v || !PlayerEngine.url || v.paused) return;
                     if(Math.abs(v.currentTime - PlayerEngine.lastTime) < 0.1) {
                         PlayerEngine.stallCount++;
-                        if(PlayerEngine.stallCount > 4) { App.osd("RECONECTANDO..."); PlayerEngine.recover(); }
+                        if(PlayerEngine.stallCount > 5) { // Espera um pouco mais antes de reiniciar
+                            App.osd("ESTABILIZANDO..."); 
+                            if(PlayerEngine.hls) PlayerEngine.hls.startLoad(); // Tenta carregar buffer antes de resetar tudo
+                            else PlayerEngine.recover(); 
+                        }
                     } else { PlayerEngine.stallCount = 0; PlayerEngine.lastTime = v.currentTime; }
                 }, 2000);
             },
             stopMonitor: function() { if(this.monitorTimer) clearInterval(this.monitorTimer); },
             recover: function() {
                 this.retryCount++;
-                if(this.retryCount > 8) { this.stop(); App.osd("FALHA DE SINAL"); return; }
+                if(this.retryCount > 10) { this.stop(); App.osd("SINAL INSTÁVEL"); return; }
                 setTimeout(function(){ 
                     PlayerEngine.stop(); 
                     setTimeout(function(){ 
                         if(App.mode === 'live' || PlayerEngine.url.includes('.m3u8')) {
                             var v = document.getElementById('player'); v.load(); PlayerEngine.play(PlayerEngine.url, true);
                         }
-                    }, 500); 
+                    }, 1000); 
                 }, 1000);
             },
             stop: function() { 
@@ -354,7 +407,7 @@
             },
 
             req: function(url, cb) {
-                var x = new XMLHttpRequest(); x.open("GET", url, true); x.timeout = 20000;
+                var x = new XMLHttpRequest(); x.open("GET", url, true); x.timeout = 25000; // Timeout maior
                 x.onload = function() { if(x.status===200) { try{cb(JSON.parse(x.responseText));}catch(e){cb(null);} } else cb(null); };
                 x.onerror = function(){ cb(null); }; x.send();
             },
@@ -400,6 +453,10 @@
                 this.mode = m; this.setScr(2); this.isFolder = false; this.globalData = null; this.playingId = null;
                 document.getElementById('cat-list').innerHTML = ''; document.getElementById('item-list').innerHTML = '';
                 document.getElementById('loader').classList.remove('hide');
+                
+                // Limpa a busca ao trocar de modo
+                document.getElementById('search').value = '';
+
                 var act = (m==='live')?'get_live_categories':(m==='movie'?'get_vod_categories':'get_series_categories');
                 this.req(this.creds.h+"/player_api.php?username="+this.creds.u+"&password="+this.creds.p+"&action="+act, function(d){
                     document.getElementById('loader').classList.add('hide');
@@ -428,6 +485,10 @@
                 var cid = el.getAttribute('data-id');
                 document.querySelectorAll('.cat-item').forEach(function(e){e.classList.remove('active')});
                 el.classList.add('active');
+                
+                // CORREÇÃO: Limpa a barra de pesquisa ao mudar de categoria
+                document.getElementById('search').value = '';
+
                 document.getElementById('loader').classList.remove('hide');
                 document.getElementById('item-list').innerHTML = '';
 
@@ -450,7 +511,7 @@
 
             renderList: function(keepIdx) {
                 var d = this.fullData;
-                var max = d.length > 100 ? 100 : d.length; 
+                var max = d.length > 200 ? 200 : d.length; // Limite um pouco maior
                 if(max===0) { document.getElementById('item-list').innerHTML = '<div style="padding:20px;">Vazio</div>'; return; }
                 var h = '';
                 for(var i=0; i<max; i++) {
@@ -520,7 +581,7 @@
 
             doSearch: function() {
                 var t = document.getElementById('search').value.toLowerCase();
-                if(t.length < 3) return;
+                if(t.length < 2) return; // Permite buscar com 2 letras
                 document.getElementById('item-list').innerHTML = '<div style="padding:20px">Buscando...</div>';
                 var cb = function(d) {
                     if(d) { 
@@ -648,6 +709,18 @@
         document.addEventListener('keydown', function(e) {
             var k=e.keyCode;
             
+            // --- CORREÇÃO DE TECLADO EXTERNO NA BUSCA ---
+            if(document.activeElement.tagName === 'INPUT') {
+                // Se estiver no campo de busca:
+                if(k === 13) { App.doSearch(); return; } // ENTER faz a busca
+                if(k === 40) { e.preventDefault(); App.zone=2; App.idx=0; App.updateFocus(); return; } // Seta pra Baixo sai da busca
+                
+                // IMPORTANTE: Permitir que todas as outras teclas funcionem normalmente (letras, backspace, numeros)
+                // Não chama preventDefault() nem as funções de navegação do App
+                return; 
+            }
+            // --------------------------------------------
+
             if(App.scr === 0) {
                 if(k===13) {
                     e.preventDefault(); 
@@ -676,16 +749,8 @@
                 if(k===13||k===403||k===82||k===27||k===461) App.toggleFull(); 
                 return; 
             }
-            if(App.scr===2 && document.activeElement.id==='search') { 
-                if(k===13) { App.doSearch(); } 
-                if(k===8 || k===27 || k===461) { 
-                    e.preventDefault(); 
-                    document.getElementById('search').blur(); 
-                    App.zone=0; App.idx=App.lastCatIdx; App.updateFocus(); 
-                } 
-                if(k===40) { App.zone=2; App.idx=0; App.updateFocus(); } 
-                return; 
-            }
+            
+            // NAVEGAÇÃO PADRÃO (SÓ RODA SE NÃO ESTIVER NO INPUT)
             if(k===37) { e.preventDefault(); App.move(2); } if(k===38) { e.preventDefault(); App.move(0); }
             if(k===39) { e.preventDefault(); App.move(3); } if(k===40) { e.preventDefault(); App.move(1); }
             if(k===13) { e.preventDefault(); App.enter(); }
