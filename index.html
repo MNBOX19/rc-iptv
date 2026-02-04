@@ -41,32 +41,55 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
         }
         
-        /* --- CORREÇÃO DO PLAYER (PREVIEW E FULLSCREEN) --- */
+        .focused i, .focused span, .focused div { color: #000 !important; }
+
+        /* --- CORREÇÃO DO PLAYER (PREVIEW) --- */
+        /* Garante que o container tenha tamanho fixo e borda transparente para não "pular" */
+        .vid-box { 
+            width: 100%; 
+            height: 45vh; 
+            background: #000; 
+            position: relative; /* Essencial para travar o vídeo */
+            border: 4px solid transparent; /* Reserva espaço */
+            border-bottom: 4px solid #333; /* Borda visual */
+            box-sizing: border-box;
+            overflow: hidden; /* Corta excessos */
+        }
         
+        /* Quando focado: Só pinta a borda, não muda tamanho */
         #vid-box.focused {
-            transform: none !important;
-            border: 4px solid var(--gold) !important;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            transform: none !important; 
+            border-color: var(--gold) !important;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
             z-index: 60;
         }
 
+        /* Correção do status "TELA CHEIA" ficar preto */
+        #vid-box.focused .osd-status { 
+            color: var(--gold) !important; 
+            border-color: var(--gold) !important;
+        }
+
+        /* --- CORREÇÃO DO VÍDEO (ZOOM) --- */
+        video { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100% !important; 
+            height: 100% !important; 
+            background: #000; 
+            object-fit: contain !important; /* contain = Mostra tudo sem cortar (pode ter barras pretas). fill = Estica. */
+            outline: none;
+            border: none;
+        }
+
+        /* MODO FULLSCREEN */
         #vid-box.fs, #vid-box.fs.focused {
-            transform: none !important;
             border: none !important;
             box-shadow: none !important;
             position: fixed !important;
             top: 0 !important; left: 0 !important;
             width: 100vw !important; height: 100vh !important;
             z-index: 9999 !important;
-        }
-
-        .focused i, .focused span, .focused div { color: #000 !important; }
-
-        /* --- CORREÇÃO DO OSD (TELA CHEIA) --- */
-        /* Força a cor Dourada/Branca no texto de status mesmo quando o player está focado */
-        #vid-box.focused .osd-status { 
-            color: var(--gold) !important; 
-            border-color: var(--gold) !important;
         }
 
         /* LOGIN */
@@ -142,11 +165,6 @@
         .fav-icon { float: right; color: var(--gold); margin-left: 10px; }
 
         .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; }
-        
-        /* Vid-box Base */
-        .vid-box { width: 100%; height: 45vh; background: #000; position: relative; border-bottom: 2px solid #333; }
-        
-        video { width: 100%; height: 100%; background: #000; object-fit: contain !important; }
         
         .meta { padding: 30px; flex: 1; background: #080808; display: flex; flex-direction: column; overflow: hidden; }
         .meta-title { font-size: 24px; color: var(--gold); font-weight: 800; margin-bottom: 10px; }
@@ -260,7 +278,7 @@
             isFav: function(id) { return this.list.indexOf(id) > -1; }
         };
 
-        // --- PLAYER OTIMIZADO PARA FUTEBOL AO VIVO ---
+        // --- PLAYER ENGINE OTIMIZADO (FUTEBOL/AO VIVO) ---
         var PlayerEngine = {
             hls: null, video: null, url: null, retryCount: 0, monitorTimer: null, lastTime: 0, stallCount: 0, isRecovering: false,
 
@@ -285,6 +303,7 @@
                 if(isLive || url.includes('.m3u8')) {
                     if(Hls.isSupported()) this.startHls(url);
                     else if (this.video.canPlayType('application/vnd.apple.mpegurl')) {
+                        // Fallback Nativo (Tizen/WebOS antigo)
                         this.video.src = url; 
                         this.video.play().catch(function(e){ console.log(e); });
                     }
@@ -297,14 +316,14 @@
 
             startHls: function(url) {
                 if(this.hls) this.hls.destroy();
-                // CONFIG DE BUFFER OTIMIZADA
+                // Buffer aumentado para segurar oscilação de rede
                 var config = { 
                     enableWorker:true, 
-                    maxBufferLength:30, // 30s de buffer para segurar oscilação
-                    maxMaxBufferLength:60,
+                    maxBufferLength: 30, 
+                    maxMaxBufferLength: 60,
                     startLevel:-1, 
-                    manifestLoadingTimeOut:20000,
-                    fragLoadingTimeOut:25000 
+                    manifestLoadingTimeOut: 20000,
+                    fragLoadingTimeOut: 25000 
                 };
                 this.hls = new Hls(config);
                 this.hls.loadSource(url);
@@ -327,7 +346,7 @@
                     
                     if(Math.abs(v.currentTime - PlayerEngine.lastTime) < 0.1) {
                         PlayerEngine.stallCount++;
-                        if(PlayerEngine.stallCount > 3) { // Mais tolerante a pequenas travadinhas
+                        if(PlayerEngine.stallCount > 3) { 
                             App.osd("SINAL FRACO - RECONECTANDO..."); 
                             PlayerEngine.recover(); 
                         }
@@ -335,7 +354,7 @@
                         PlayerEngine.stallCount = 0; 
                         PlayerEngine.lastTime = v.currentTime; 
                     }
-                }, 3000); // Checa a cada 3s
+                }, 3000); 
             },
             stopMonitor: function() { if(this.monitorTimer) clearInterval(this.monitorTimer); },
             recover: function() {
@@ -462,9 +481,9 @@
             loadContent: function(catIdx) {
                 this.lastCatIdx = catIdx; 
                 
-                // --- LIMPA A BUSCA AO TROCAR DE CATEGORIA ---
+                // --- CORREÇÃO: Limpa a busca ao trocar de categoria ---
                 document.getElementById('search').value = ''; 
-                // --------------------------------------------
+                // -----------------------------------------------------
 
                 var el = document.getElementById('c'+catIdx); if(!el) return;
                 var cid = el.getAttribute('data-id');
@@ -624,7 +643,11 @@
                         document.getElementById('search').blur();
                         el.focus(); 
                     }
-                    if(el.tagName!=='INPUT') el.scrollIntoView({block:'center',behavior:'smooth'}); 
+                    
+                    // --- CORREÇÃO: Evita que a tela role sozinha se for o vídeo ---
+                    if(el.id !== 'vid-box' && el.tagName !== 'INPUT') {
+                         el.scrollIntoView({block:'center',behavior:'smooth'}); 
+                    }
                 }
             },
             move: function(d) {
