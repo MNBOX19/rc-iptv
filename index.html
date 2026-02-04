@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD V32 FINAL</title>
+    <title>R&C GOLD V33 FINAL CONTROLS</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V32 FINAL --- */
+        /* --- TEMA R&C GOLD V33 --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -341,7 +341,6 @@
                 var u = document.getElementById('i1').value.trim();
                 var p = document.getElementById('i2').value.trim();
                 
-                // CORREÇÃO: URL LIMPA
                 if(h.endsWith('/')) h = h.slice(0, -1);
                 if(h.indexOf('http') === -1) h = 'http://' + h;
                 
@@ -540,8 +539,6 @@
                 if(this.zone===1) { this.zone=2; this.idx=0; this.updateFocus(); return; }
                 if(this.zone===0) { this.setScr(1); return; }
             },
-            
-            // --- CORREÇÃO DE FOCO (ANTI-TECLADO) ---
             updateFocus: function() {
                 document.querySelectorAll('.focused').forEach(function(e){e.classList.remove('focused')});
                 var el;
@@ -558,7 +555,7 @@
                     if(el.tagName==='INPUT') { 
                         el.focus(); 
                     } else { 
-                        // SE NÃO FOR INPUT, FORÇA O BLUR EM TUDO PARA O TECLADO NÃO ABRIR
+                        // --- FORÇA O BLUR TOTAL ---
                         document.getElementById('i0').blur();
                         document.getElementById('i1').blur();
                         document.getElementById('i2').blur();
@@ -629,18 +626,28 @@
         document.addEventListener('keydown', function(e) {
             var k=e.keyCode;
             
-            // --- CORREÇÃO DO ENTER NA TELA DE LOGIN ---
+            // --- BLOQUEIO AGRESSIVO DO ENTER NO LOGIN (ANTI-TECLADO) ---
             if(App.scr === 0) {
                 if(k===13) {
-                    e.preventDefault(); // Impede o teclado de abrir
+                    e.preventDefault(); 
                     if(App.idx === 3) {
-                        // Garante que o foco saia dos inputs antes de logar
-                        document.getElementById('i0').blur();
-                        document.getElementById('i1').blur();
-                        document.getElementById('i2').blur();
+                        document.activeElement.blur(); // Tira foco de qualquer input
                         App.login();
                     }
                     return;
+                }
+            }
+
+            // CONTROLES VOD (V33)
+            if(App.scr===2 && App.mode!=='live' && (document.getElementById('vid-box').classList.contains('fs') || App.zone===3)) {
+                var v = document.getElementById('player');
+                if(k===39 || k===417) { v.currentTime += 30; App.osd(">> 30s"); return; } // Right/FF
+                if(k===37 || k===412) { v.currentTime -= 30; App.osd("<< 30s"); return; } // Left/RW
+                if(k===13 || k===415 || k===19 || k===179) { // Enter/Play/Pause
+                    if(document.getElementById('vid-box').classList.contains('fs')) {
+                       if(v.paused) { v.play(); App.osd("▶ PLAY"); } else { v.pause(); App.osd("⏸ PAUSE"); }
+                       return;
+                    }
                 }
             }
 
