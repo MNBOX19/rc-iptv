@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD V33 FINAL CONTROLS</title>
+    <title>R&C GOLD V36 MASTER FINAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V33 --- */
+        /* --- TEMA R&C GOLD V36 MASTER --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -31,7 +31,7 @@
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; background: #000; }
 
-        /* FOCO */
+        /* FOCO PADRÃO (Itens da lista, botões do menu) */
         .focused {
             border: 3px solid #fff !important;
             background: var(--focus-grad) !important;
@@ -40,6 +40,22 @@
             z-index: 50;
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
         }
+        
+        /* --- CORREÇÃO FINAL DO PREVIEW --- */
+        /* Aplica borda SÓ se NÃO estiver em Fullscreen (.fs) */
+        #vid-box.focused:not(.fs) {
+            transform: none !important; /* Sem zoom para não distorcer */
+            border: 4px solid var(--gold) !important; /* Borda Dourada no Preview */
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            z-index: 60;
+        }
+
+        /* Em Fullscreen, remove qualquer borda */
+        #vid-box.fs {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
         .focused i, .focused span, .focused div { color: #000 !important; }
 
         /* LOGIN */
@@ -116,10 +132,11 @@
 
         .col-play { flex: 1; background: #000; display: flex; flex-direction: column; position: relative; }
         .vid-box { width: 100%; height: 45vh; background: #000; position: relative; border-bottom: 2px solid #333; }
-        .vid-box.fs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; border: none; }
-        video { width: 100%; height: 100%; background: #000; object-fit: contain; }
-        video.live { object-fit: fill; } 
-
+        .vid-box.fs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; border: none !important; }
+        
+        /* Vídeo sempre contido corretamente */
+        video { width: 100%; height: 100%; background: #000; object-fit: contain !important; }
+        
         .meta { padding: 30px; flex: 1; background: #080808; display: flex; flex-direction: column; overflow: hidden; }
         .meta-title { font-size: 24px; color: var(--gold); font-weight: 800; margin-bottom: 10px; }
         .meta-epg { font-size: 13px; background: #222; color: #fff; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-bottom: 15px; }
@@ -353,13 +370,10 @@
                         App.creds={h:h,u:u,p:p};
                         localStorage.setItem('rc_h', h); localStorage.setItem('rc_u', u); localStorage.setItem('rc_p', p);
                         var info = d.user_info;
-                        
                         var exp = info.exp_date ? new Date(info.exp_date*1000).toLocaleDateString("pt-BR") : "Ilimitado";
                         var conn = (info.active_cons || 0) + " / " + (info.max_connections || 1);
-                        
                         document.getElementById('info-exp').innerText = exp;
                         document.getElementById('info-conn').innerText = conn;
-                        
                         App.setScr(1);
                     } else document.getElementById('msg-login').innerText="Login Falhou";
                 });
@@ -539,6 +553,7 @@
                 if(this.zone===1) { this.zone=2; this.idx=0; this.updateFocus(); return; }
                 if(this.zone===0) { this.setScr(1); return; }
             },
+            
             updateFocus: function() {
                 document.querySelectorAll('.focused').forEach(function(e){e.classList.remove('focused')});
                 var el;
@@ -555,7 +570,6 @@
                     if(el.tagName==='INPUT') { 
                         el.focus(); 
                     } else { 
-                        // --- FORÇA O BLUR TOTAL ---
                         document.getElementById('i0').blur();
                         document.getElementById('i1').blur();
                         document.getElementById('i2').blur();
@@ -618,7 +632,9 @@
                     if(this.zone===0) this.loadContent(this.idx);
                     if(this.zone===1) this.doSearch();
                     if(this.zone===2) this.clickItem();
-                    if(this.zone===3) this.toggleFull();
+                    if(this.zone===3) {
+                        this.toggleFull(); 
+                    }
                 }
             }
         };
@@ -626,28 +642,25 @@
         document.addEventListener('keydown', function(e) {
             var k=e.keyCode;
             
-            // --- BLOQUEIO AGRESSIVO DO ENTER NO LOGIN (ANTI-TECLADO) ---
             if(App.scr === 0) {
                 if(k===13) {
                     e.preventDefault(); 
                     if(App.idx === 3) {
-                        document.activeElement.blur(); // Tira foco de qualquer input
+                        document.activeElement.blur(); 
                         App.login();
                     }
                     return;
                 }
             }
 
-            // CONTROLES VOD (V33)
-            if(App.scr===2 && App.mode!=='live' && (document.getElementById('vid-box').classList.contains('fs') || App.zone===3)) {
+            // CONTROLES VOD 
+            if(App.scr===2 && App.mode!=='live' && document.getElementById('vid-box').classList.contains('fs')) {
                 var v = document.getElementById('player');
-                if(k===39 || k===417) { v.currentTime += 30; App.osd(">> 30s"); return; } // Right/FF
-                if(k===37 || k===412) { v.currentTime -= 30; App.osd("<< 30s"); return; } // Left/RW
-                if(k===13 || k===415 || k===19 || k===179) { // Enter/Play/Pause
-                    if(document.getElementById('vid-box').classList.contains('fs')) {
-                       if(v.paused) { v.play(); App.osd("▶ PLAY"); } else { v.pause(); App.osd("⏸ PAUSE"); }
-                       return;
-                    }
+                if(k===39 || k===417) { v.currentTime += 30; App.osd(">> 30s"); return; } 
+                if(k===37 || k===412) { v.currentTime -= 30; App.osd("<< 30s"); return; } 
+                if(k===13 || k===415 || k===19 || k===179) { 
+                   if(v.paused) { v.play(); App.osd("▶ PLAY"); } else { v.pause(); App.osd("⏸ PAUSE"); }
+                   return;
                 }
             }
 
