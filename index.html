@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>R&C GOLD V39 FINAL</title>
+    <title>R&C GOLD V40 FINAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V39 --- */
+        /* --- TEMA R&C GOLD V40 --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -258,7 +258,7 @@
                     <div class="key"><div class="dot" style="background:#ff4444"></div> TELA CHEIA</div>
                     <div class="key"><div class="dot" style="background:#00C851"></div> TOPO</div>
                     <div class="key"><div class="dot" style="background:#ffbb33"></div> BUSCAR</div>
-                    <div class="key"><div class="dot" style="background:#33b5e5"></div> VOLTAR</div>
+                    <div class="key"><div class="dot" style="background:#33b5e5"></div> MENU</div>
                 </div>
             </div>
         </div>
@@ -297,43 +297,30 @@
                 if(!isLive && !url.includes('.m3u8')) {
                     this.video.src = url; this.video.play().catch(function(e){ console.log(e); }); return;
                 }
+                
+                // --- RESTAURAÇÃO LOGICA V37 (PHILCO COMPATÍVEL) ---
+                // Prioriza player nativo da TV. Só usa hls.js se a TV não suportar nativamente.
                 var canPlayNative = this.video.canPlayType('application/vnd.apple.mpegurl');
                 if (canPlayNative === "probably" || canPlayNative === "maybe") {
-                    this.video.src = url; this.video.play().catch(function(e){ if(Hls.isSupported()) PlayerEngine.startHls(url); });
-                } else if (Hls.isSupported()) this.startHls(url);
+                    this.video.src = url; 
+                    this.video.play().catch(function(e){ 
+                        // Se falhar nativo, tenta hls.js
+                        if(Hls.isSupported()) PlayerEngine.startHls(url); 
+                    });
+                } else if (Hls.isSupported()) {
+                    this.startHls(url);
+                }
             },
             startHls: function(url) {
                 if(this.hls) this.hls.destroy();
-                var config = { 
-                    enableWorker: true,
-                    maxBufferLength: 30, 
-                    maxMaxBufferLength: 60,
-                    startLevel: -1,
-                    manifestLoadingTimeOut: 20000,
-                    levelLoadingTimeOut: 20000,
-                    fragLoadingTimeOut: 20000,
-                    enableSoftwareAES: true,
-                    liveSyncDurationCount: 3,
-                    liveMaxLatencyDurationCount: 10
-                };
+                // Configuração mais leve para TVs antigas (V37 Style)
+                var config = { enableWorker:true, maxBufferLength:10, startLevel:-1, manifestLoadingTimeOut:15000 };
                 this.hls = new Hls(config);
                 this.hls.loadSource(url);
                 this.hls.attachMedia(this.video);
                 this.hls.on(Hls.Events.MANIFEST_PARSED, function() { PlayerEngine.video.play().catch(function(e){}); });
                 this.hls.on(Hls.Events.ERROR, function(event, data) {
-                    if (data.fatal) { 
-                        switch(data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                PlayerEngine.hls.startLoad();
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                PlayerEngine.hls.recoverMediaError();
-                                break;
-                            default:
-                                PlayerEngine.recover();
-                                break;
-                        }
-                    }
+                    if (data.fatal) { if(data.type === Hls.ErrorTypes.NETWORK_ERROR) PlayerEngine.hls.startLoad(); else PlayerEngine.recover(); }
                 });
             },
             startMonitor: function() {
@@ -343,10 +330,8 @@
                     if(!v || !PlayerEngine.url || v.paused) return;
                     if(Math.abs(v.currentTime - PlayerEngine.lastTime) < 0.1) {
                         PlayerEngine.stallCount++;
-                        if(PlayerEngine.stallCount > 5) { 
-                            App.osd("ESTABILIZANDO..."); 
-                            if(PlayerEngine.hls) PlayerEngine.hls.startLoad(); 
-                            else PlayerEngine.recover(); 
+                        if(PlayerEngine.stallCount > 5) { // Tolerancia maior para TV lenta
+                            App.osd("RECONECTANDO..."); PlayerEngine.recover(); 
                         }
                     } else { PlayerEngine.stallCount = 0; PlayerEngine.lastTime = v.currentTime; }
                 }, 2000);
@@ -354,14 +339,14 @@
             stopMonitor: function() { if(this.monitorTimer) clearInterval(this.monitorTimer); },
             recover: function() {
                 this.retryCount++;
-                if(this.retryCount > 10) { this.stop(); App.osd("SINAL INSTÁVEL"); return; }
+                if(this.retryCount > 8) { this.stop(); App.osd("FALHA DE SINAL"); return; }
                 setTimeout(function(){ 
                     PlayerEngine.stop(); 
                     setTimeout(function(){ 
                         if(App.mode === 'live' || PlayerEngine.url.includes('.m3u8')) {
                             var v = document.getElementById('player'); v.load(); PlayerEngine.play(PlayerEngine.url, true);
                         }
-                    }, 1000); 
+                    }, 500); 
                 }, 1000);
             },
             stop: function() { 
