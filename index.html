@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>R&C GOLD V38 FINAL</title>
+    <title>R&C GOLD V39 FINAL</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V38 --- */
+        /* --- TEMA R&C GOLD V39 --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -86,11 +86,11 @@
             .dash-grid { flex-direction: column; gap: 20px; overflow-y: auto; }
             .smart-card { width: 100%; height: 100px; flex-direction: row; gap: 20px; }
             .smart-card i { margin-bottom: 0; font-size: 40px; }
-            .col-cat { width: 30%; } /* Menu lateral maior no mobile */
+            .col-cat { width: 30%; } 
             .col-list { width: 70%; border: none; }
             .col-play { position: fixed; bottom: 0; left: 0; width: 100%; height: auto; z-index: 100; border-top: 2px solid #333; }
             .vid-box { height: 200px; }
-            .meta { display: none; } /* Esconde meta infos no celular vertical para economizar espaço */
+            .meta { display: none; }
             #content-layer { flex-wrap: wrap; }
         }
 
@@ -165,7 +165,6 @@
 
         #loader { background: rgba(0,0,0,0.95); z-index: 20000; flex-direction: column; color: var(--gold); font-weight: 900; }
         
-        /* CORREÇÃO OSD - FORÇA A COR DOURADA MESMO COM FOCO */
         .osd-status { 
             position: absolute; top: 20px; right: 20px; 
             background: rgba(0,0,0,0.8); 
@@ -305,17 +304,16 @@
             },
             startHls: function(url) {
                 if(this.hls) this.hls.destroy();
-                // CONFIGURAÇÃO OTIMIZADA PARA ESTABILIDADE (FUTEBOL SEM TRAVAR)
                 var config = { 
                     enableWorker: true,
-                    maxBufferLength: 30, // Buffer maior para aguentar oscilação
+                    maxBufferLength: 30, 
                     maxMaxBufferLength: 60,
                     startLevel: -1,
                     manifestLoadingTimeOut: 20000,
                     levelLoadingTimeOut: 20000,
                     fragLoadingTimeOut: 20000,
                     enableSoftwareAES: true,
-                    liveSyncDurationCount: 3, // Mantém um pouco atrás do "ao vivo" real para garantir buffer
+                    liveSyncDurationCount: 3,
                     liveMaxLatencyDurationCount: 10
                 };
                 this.hls = new Hls(config);
@@ -326,11 +324,9 @@
                     if (data.fatal) { 
                         switch(data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log("Erro de Rede, tentando recuperar...");
                                 PlayerEngine.hls.startLoad();
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.log("Erro de Midia, tentando recuperar...");
                                 PlayerEngine.hls.recoverMediaError();
                                 break;
                             default:
@@ -347,9 +343,9 @@
                     if(!v || !PlayerEngine.url || v.paused) return;
                     if(Math.abs(v.currentTime - PlayerEngine.lastTime) < 0.1) {
                         PlayerEngine.stallCount++;
-                        if(PlayerEngine.stallCount > 5) { // Espera um pouco mais antes de reiniciar
+                        if(PlayerEngine.stallCount > 5) { 
                             App.osd("ESTABILIZANDO..."); 
-                            if(PlayerEngine.hls) PlayerEngine.hls.startLoad(); // Tenta carregar buffer antes de resetar tudo
+                            if(PlayerEngine.hls) PlayerEngine.hls.startLoad(); 
                             else PlayerEngine.recover(); 
                         }
                     } else { PlayerEngine.stallCount = 0; PlayerEngine.lastTime = v.currentTime; }
@@ -407,7 +403,7 @@
             },
 
             req: function(url, cb) {
-                var x = new XMLHttpRequest(); x.open("GET", url, true); x.timeout = 25000; // Timeout maior
+                var x = new XMLHttpRequest(); x.open("GET", url, true); x.timeout = 25000;
                 x.onload = function() { if(x.status===200) { try{cb(JSON.parse(x.responseText));}catch(e){cb(null);} } else cb(null); };
                 x.onerror = function(){ cb(null); }; x.send();
             },
@@ -454,7 +450,6 @@
                 document.getElementById('cat-list').innerHTML = ''; document.getElementById('item-list').innerHTML = '';
                 document.getElementById('loader').classList.remove('hide');
                 
-                // Limpa a busca ao trocar de modo
                 document.getElementById('search').value = '';
 
                 var act = (m==='live')?'get_live_categories':(m==='movie'?'get_vod_categories':'get_series_categories');
@@ -486,7 +481,6 @@
                 document.querySelectorAll('.cat-item').forEach(function(e){e.classList.remove('active')});
                 el.classList.add('active');
                 
-                // CORREÇÃO: Limpa a barra de pesquisa ao mudar de categoria
                 document.getElementById('search').value = '';
 
                 document.getElementById('loader').classList.remove('hide');
@@ -511,7 +505,7 @@
 
             renderList: function(keepIdx) {
                 var d = this.fullData;
-                var max = d.length > 200 ? 200 : d.length; // Limite um pouco maior
+                var max = d.length > 200 ? 200 : d.length; 
                 if(max===0) { document.getElementById('item-list').innerHTML = '<div style="padding:20px;">Vazio</div>'; return; }
                 var h = '';
                 for(var i=0; i<max; i++) {
@@ -581,7 +575,7 @@
 
             doSearch: function() {
                 var t = document.getElementById('search').value.toLowerCase();
-                if(t.length < 2) return; // Permite buscar com 2 letras
+                if(t.length < 2) return;
                 document.getElementById('item-list').innerHTML = '<div style="padding:20px">Buscando...</div>';
                 var cb = function(d) {
                     if(d) { 
@@ -709,17 +703,26 @@
         document.addEventListener('keydown', function(e) {
             var k=e.keyCode;
             
-            // --- CORREÇÃO DE TECLADO EXTERNO NA BUSCA ---
+            // --- CORREÇÃO IMPORTANTE DE INPUT ---
             if(document.activeElement.tagName === 'INPUT') {
-                // Se estiver no campo de busca:
-                if(k === 13) { App.doSearch(); return; } // ENTER faz a busca
-                if(k === 40) { e.preventDefault(); App.zone=2; App.idx=0; App.updateFocus(); return; } // Seta pra Baixo sai da busca
                 
-                // IMPORTANTE: Permitir que todas as outras teclas funcionem normalmente (letras, backspace, numeros)
-                // Não chama preventDefault() nem as funções de navegação do App
-                return; 
+                // SE ESTIVER NA TELA DE LOGIN (Screen 0)
+                if(App.scr === 0) {
+                    if(k === 13) { e.preventDefault(); App.login(); return; } // ENTER JÁ CONECTA
+                    if(k === 40) { e.preventDefault(); App.move(1); return; } // SETA BAIXO FUNCIONA
+                    if(k === 38) { e.preventDefault(); App.move(0); return; } // SETA CIMA FUNCIONA
+                    // Outras teclas (letras, numeros) funcionam normalmente
+                    return; 
+                }
+
+                // SE ESTIVER NA TELA DE BUSCA (Screen 2)
+                if(App.scr === 2) {
+                    if(k === 13) { App.doSearch(); return; } 
+                    if(k === 40) { e.preventDefault(); App.zone=2; App.idx=0; App.updateFocus(); return; } 
+                    return; // Bloqueia outras navegações
+                }
             }
-            // --------------------------------------------
+            // ------------------------------------
 
             if(App.scr === 0) {
                 if(k===13) {
@@ -750,7 +753,6 @@
                 return; 
             }
             
-            // NAVEGAÇÃO PADRÃO (SÓ RODA SE NÃO ESTIVER NO INPUT)
             if(k===37) { e.preventDefault(); App.move(2); } if(k===38) { e.preventDefault(); App.move(0); }
             if(k===39) { e.preventDefault(); App.move(3); } if(k===40) { e.preventDefault(); App.move(1); }
             if(k===13) { e.preventDefault(); App.enter(); }
