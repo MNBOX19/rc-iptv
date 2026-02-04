@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R&C GOLD V30 FINAL</title>
+    <title>R&C GOLD V31 FINAL LOGIN FIX</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        /* --- TEMA R&C GOLD V30 FINAL --- */
+        /* --- TEMA R&C GOLD V31 --- */
         :root { 
             --bg: #000000; 
             --gold: #FFD700; 
@@ -340,8 +340,14 @@
                 var h = document.getElementById('i0').value.trim();
                 var u = document.getElementById('i1').value.trim();
                 var p = document.getElementById('i2').value.trim();
-                if(h.indexOf('http')===-1) h='http://'+h;
+                
+                // --- CORREÇÃO DO LOGIN (URL LIMPA) ---
+                if(h.endsWith('/')) h = h.slice(0, -1);
+                if(h.indexOf('http') === -1) h = 'http://' + h;
+                
                 document.getElementById('loader').classList.remove('hide');
+                document.getElementById('load-txt').innerText = "CONECTANDO...";
+                
                 this.req(h+"/player_api.php?username="+u+"&password="+p, function(d){
                     document.getElementById('loader').classList.add('hide');
                     if(d && d.user_info && d.user_info.auth==1) {
@@ -353,7 +359,7 @@
                         var conn = (info.active_cons || 0) + " / " + (info.max_connections || 1);
                         
                         document.getElementById('info-exp').innerText = exp;
-                        document.getElementById('info-conn').innerText = conn; // ATUALIZADO AQUI
+                        document.getElementById('info-conn').innerText = conn;
                         
                         App.setScr(1);
                     } else document.getElementById('msg-login').innerText="Login Falhou";
@@ -503,7 +509,6 @@
                         App.isFolder = false; 
                         App.renderList(); 
                         
-                        // CORREÇÃO: FOCA NA LISTA APÓS BUSCA
                         App.zone = 2; 
                         App.idx = 0; 
                         App.updateFocus();
@@ -548,7 +553,7 @@
                 }
                 if(el) {
                     el.classList.add('focused'); 
-                    if(el.tagName==='INPUT') { el.focus(); } else { el.blur(); } // Blur se não for input para tirar teclado
+                    if(el.tagName==='INPUT') { el.focus(); } else { el.blur(); } 
                     if(el.tagName!=='INPUT') el.scrollIntoView({block:'center',behavior:'smooth'}); 
                 }
             },
@@ -619,8 +624,7 @@
                 return; 
             }
             if(App.scr===2 && document.activeElement.id==='search') { 
-                if(k===13) { App.doSearch(); } // ENTER: BUSCA E SAI
-                // CORREÇÃO: BOTÃO VOLTAR (Backspace[8], ESC[27], Return[461]) SAI DA BUSCA
+                if(k===13) { App.doSearch(); } 
                 if(k===8 || k===27 || k===461) { 
                     e.preventDefault(); 
                     document.getElementById('search').blur(); 
@@ -634,11 +638,10 @@
             if(k===13) { e.preventDefault(); App.enter(); }
             if(k===8||k===27||k===461) { e.preventDefault(); if(App.scr>0) App.back(); }
             
-            // ATALHOS
-            if(k===403||k===82) if(App.scr===2) App.toggleFull(); // VERMELHO
-            if(k===404||k===71) if(App.scr===2) { App.zone=0; App.idx=0; App.updateFocus(); } // VERDE
-            if(k===405||k===89) if(App.scr===2) { App.zone=1; App.updateFocus(); } // AMARELO
-            if(k===406||k===66||k===275) { e.preventDefault(); App.setScr(1); } // AZUL
+            if(k===403||k===82) if(App.scr===2) App.toggleFull(); 
+            if(k===404||k===71) if(App.scr===2) { App.zone=0; App.idx=0; App.updateFocus(); } 
+            if(k===405||k===89) if(App.scr===2) { App.zone=1; App.updateFocus(); } 
+            if(k===406||k===66||k===275) { e.preventDefault(); App.setScr(1); } 
         });
     </script>
 </body>
