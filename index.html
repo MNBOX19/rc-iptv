@@ -315,11 +315,11 @@
                 if(this.hls) this.hls.destroy();
                 // --- MANTIVE A CONFIGURAÇÃO TURBO PARA FUTEBOL ---
                 var config = { 
-                    enableWorker: true, 
-                    maxBufferLength: 30, // Buffer alto para TV Philco
-                    maxMaxBufferLength: 60,
+                    enableWorker: false, 
+                    maxBufferLength: 5, // Buffer alto para TV Philco
+                    maxMaxBufferLength: 10,
                     startLevel: -1, 
-                    manifestLoadingTimeOut: 20000,
+                    manifestLoadingTimeOut: 10000,
                     capLevelToPlayerSize: true 
                 };
                 this.hls = new Hls(config);
